@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Журнал тренировок</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
@@ -15,13 +16,11 @@ body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
 .green{background:#34c759}
-.red{background:#ff3b30}
-.yellow{background:#ffcc00;color:#000}
 .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 .title{font-size:20px;font-weight:600;margin-bottom:10px}
 </style>
-
 </head>
+
 <body>
 
 <div class="container" id="app"></div>
@@ -32,32 +31,34 @@ button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#f
 const firebaseConfig = {
   apiKey: "AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
   authDomain: "workout-app-80e26.firebaseapp.com",
-  projectId: "workout-app-80e26",
+  projectId: "workout-app-80e26"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // 🔥 DATA
-let data = JSON.parse(localStorage.getItem('workouts')) || [];
+let data = [];
 
 // 🔥 SAVE
-async function save(){
+function save(){
   localStorage.setItem('workouts', JSON.stringify(data));
 
-  await db.collection("users").doc("main").set({
+  db.collection("users").doc("main").set({
     workouts: data
   });
 }
 
 // 🔥 LOAD
-async function load(){
-  const doc = await db.collection("users").doc("main").get();
-
-  if(doc.exists){
-    data = doc.data().workouts || [];
-    localStorage.setItem('workouts', JSON.stringify(data));
-  }
+function load(){
+  return db.collection("users").doc("main").get().then(doc=>{
+    if(doc.exists){
+      data = doc.data().workouts || [];
+      localStorage.setItem('workouts', JSON.stringify(data));
+    } else {
+      data = JSON.parse(localStorage.getItem('workouts')) || [];
+    }
+  });
 }
 
 // -------- HOME --------
@@ -94,7 +95,7 @@ list.appendChild(d);
 });
 }
 
-// -------- ADD --------
+// -------- ADD WORKOUT --------
 function addW(){
 let v=document.getElementById('nw').value;
 if(!v)return;
@@ -104,14 +105,14 @@ save();
 home();
 }
 
-// -------- OPEN --------
+// -------- OPEN WORKOUT --------
 function openW(i){
 let w=data[i];
 
 const app=document.getElementById('app');
 
 app.innerHTML=`
-<button onclick="home()">←</button>
+<button onclick="home()">← Назад</button>
 <div class="title">${w.name}</div>
 <div id="list"></div>
 
@@ -146,14 +147,14 @@ list.appendChild(d);
 });
 }
 
-// -------- EXERCISE --------
+// -------- ADD EXERCISE --------
 function addE(wi){
-data[wi].exercises.push({name:'Новое',sets:[]});
+data[wi].exercises.push({name:'Новое упражнение',sets:[]});
 save();
 openW(wi);
 }
 
-// -------- SETS --------
+// -------- ADD SET --------
 function addSet(wi,ei){
 let w=prompt('Вес');
 let r=prompt('Повторы');
@@ -212,11 +213,14 @@ reader.readAsText(file);
 input.click();
 }
 
-// 🔥 START
-(async function(){
-  await load();
-  home();
-})();
+// 🔥 СТАРТ
+function startApp(){
+  load().then(()=>{
+    home();
+  });
+}
+
+startApp();
 
 </script>
 
