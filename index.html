@@ -18,25 +18,25 @@ border-radius:16px;
 padding:12px;
 margin-bottom:12px;
 position:relative;
-box-shadow:0 4px 10px rgba(0,0,0,.05);
 }
 
 .done{background:#e8f8ee}
 
 .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 
-button{
-padding:6px 8px;
-border:none;
-border-radius:8px;
-background:#007aff;
-color:#fff;
-}
-
+button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
 .green{background:#34c759}
 .red{background:#ff3b30}
 .yellow{background:#ffcc00;color:#000}
 .gray{background:#ccc;color:#000}
+
+.drag{
+position:absolute;
+left:8px;
+top:8px;
+cursor:grab;
+opacity:.5;
+}
 
 input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
 
@@ -50,26 +50,18 @@ display:flex;align-items:center;justify-content:center;
 background:#fff;padding:16px;border-radius:16px;width:90%;
 }
 
-.setRow{
-display:flex;justify-content:space-between;margin-top:4px;
-}
+.setRow{display:flex;justify-content:space-between;margin-top:4px}
 
 .exercise-img{
 width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px;
 }
 
 .infoBtn{
-position:absolute;top:8px;right:8px;
+position:absolute;
+right:8px;
+top:8px;
 width:24px;height:24px;border-radius:50%;
 display:flex;align-items:center;justify-content:center;font-weight:bold;
-}
-
-.drag-handle{
-position:absolute;
-top:8px;left:8px;
-font-size:18px;
-cursor:grab;
-opacity:.5;
 }
 
 .up{color:#34c759}
@@ -82,13 +74,14 @@ opacity:.5;
 
 <script>
 
-window.addEventListener("load",()=>{
+window.onload=()=>{
 
 firebase.initializeApp({
 apiKey:"AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
 authDomain:"workout-app-80e26.firebaseapp.com",
 projectId:"workout-app-80e26"
 });
+
 const db=firebase.firestore();
 
 let data=JSON.parse(localStorage.getItem('workouts'))||[];
@@ -104,6 +97,7 @@ db.collection("users").doc("main").set({workouts:data});
 db.collection("users").doc("main").onSnapshot(doc=>{
 if(!doc.exists)return;
 let cloud=doc.data().workouts||[];
+
 if(JSON.stringify(cloud)!==JSON.stringify(data)){
 data=cloud;
 localStorage.setItem('workouts',JSON.stringify(data));
@@ -111,55 +105,49 @@ home();
 }
 });
 
-// ===== DRAG LOGIC =====
-function makeDrag(list,arr,onUpdate){
+// ===== DRAG (ТОЛЬКО ЗА РУЧКУ) =====
+function dragInit(list,arr,render){
 
 let items=list.children;
 
 for(let i=0;i<items.length;i++){
 
-let handle=items[i].querySelector('.drag-handle');
+let handle=items[i].querySelector('.drag');
 
-handle.onpointerdown=(e)=>{
+handle.onmousedown=()=>{
 dragIndex=i;
 
-document.onpointermove=(ev)=>{
-let target=document.elementFromPoint(ev.clientX,ev.clientY);
-let card=target.closest('.card');
-if(!card)return;
+document.onmouseup=(e)=>{
+let el=document.elementFromPoint(e.clientX,e.clientY)?.closest('.card');
+if(!el)return;
 
 let children=[...list.children];
-let overIndex=children.indexOf(card);
+let to=children.indexOf(el);
 
-if(overIndex!==dragIndex){
-let moved=arr.splice(dragIndex,1)[0];
-arr.splice(overIndex,0,moved);
-dragIndex=overIndex;
-onUpdate();
-}
-};
-
-document.onpointerup=()=>{
-document.onpointermove=null;
-document.onpointerup=null;
+if(to!==dragIndex){
+let m=arr.splice(dragIndex,1)[0];
+arr.splice(to,0,m);
 save();
+render();
+}
+
+document.onmouseup=null;
 };
 };
 
 }
-
 }
 
 // ===== HOME =====
 function home(){
 
-app.innerHTML=`<h2>Тренировки</h2>
+app.innerHTML=`
+<h2>Тренировки</h2>
 <div id="list"></div>
 
-<div class="row">
 <input id="nw">
 <button onclick="addW()">+</button>
-</div>`;
+`;
 
 let list=document.getElementById('list');
 
@@ -169,7 +157,8 @@ let d=document.createElement('div');
 d.className='card '+(w.done?'done':'');
 
 d.innerHTML=`
-<div class="drag-handle">≡</div>
+<div class="drag">≡</div>
+
 <b>${w.name}</b>
 
 <div class="row">
@@ -184,7 +173,7 @@ d.innerHTML=`
 list.appendChild(d);
 });
 
-makeDrag(list,data,home);
+dragInit(list,data,home);
 }
 
 // ===== WORKOUT =====
@@ -197,11 +186,9 @@ app.innerHTML=`
 <h2>${w.name}</h2>
 <div id="list"></div>
 
-<div class="row">
 <button onclick="addE(${wi})">Добавить</button>
 <button onclick="addE(${wi},'special')">Особое</button>
 <button onclick="addE(${wi},'extra')">Доп</button>
-</div>
 `;
 
 let list=document.getElementById('list');
@@ -221,8 +208,8 @@ let diff='';
 if(oldS&&newS){
 let ow=parseFloat(oldS);
 let nw=parseFloat(newS);
-if(nw>ow) diff='<span class="up">↑</span>';
-if(nw<ow) diff='<span class="down">↓</span>';
+if(nw>ow) diff='↑';
+if(nw<ow) diff='↓';
 }
 
 html+=`
@@ -237,7 +224,7 @@ d.className='card';
 d.style=bg;
 
 d.innerHTML=`
-<div class="drag-handle">≡</div>
+<div class="drag">≡</div>
 
 <b>${e.name}</b>
 
@@ -266,13 +253,14 @@ list.appendChild(d);
 
 });
 
-makeDrag(list,w.exercises,()=>openW(wi));
+dragInit(list,w.exercises,()=>openW(wi));
 }
 
-// ===== BASIC =====
+// ===== ВСЕ ФУНКЦИИ =====
 function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
 function editW(i){let n=prompt('Название',data[i].name);if(n){data[i].name=n;save();home();}}
 function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
+
 function done(i){data[i].done=true;save();home();}
 function undone(i){delete data[i].done;save();home();}
 
@@ -288,7 +276,12 @@ let img=prompt('Фото',e.img||'');
 if(n){e.name=n;e.img=img||'';save();openW(wi);}
 }
 
-function delE(wi,ei){if(confirm('Удалить?')){data[wi].exercises.splice(ei,1);save();openW(wi);}}
+function delE(wi,ei){
+if(confirm('Удалить?')){
+data[wi].exercises.splice(ei,1);
+save();openW(wi);
+}
+}
 
 // ===== INFO =====
 function toggleInfo(wi,ei){
@@ -296,6 +289,7 @@ let e=data[wi].exercises[ei];
 e.showInfo=!e.showInfo;
 save();openW(wi);
 }
+
 function saveInfo(wi,ei){
 data[wi].exercises[ei].info=document.getElementById('info'+ei).innerHTML;
 save();
@@ -378,7 +372,8 @@ save();openW(wi);
 
 home();
 
-});
+};
+
 </script>
 
 </body>
