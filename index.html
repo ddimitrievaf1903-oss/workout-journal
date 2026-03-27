@@ -11,59 +11,21 @@
 <style>
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
-
-.card{
-background:#fff;
-border-radius:16px;
-padding:12px;
-margin-bottom:12px;
-position:relative;
-}
-
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;position:relative}
 .done{background:#e8f8ee}
-
 .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
 .green{background:#34c759}
 .red{background:#ff3b30}
 .yellow{background:#ffcc00;color:#000}
 .gray{background:#ccc;color:#000}
-
-.drag{
-position:absolute;
-left:8px;
-top:8px;
-cursor:grab;
-opacity:.5;
-}
-
+.drag{position:absolute;left:8px;top:8px;cursor:grab;opacity:.5}
 input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
-
-.modal{
-position:fixed;inset:0;
-background:rgba(0,0,0,.3);
-display:flex;align-items:center;justify-content:center;
-}
-
-.modalBox{
-background:#fff;padding:16px;border-radius:16px;width:90%;
-}
-
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
+.modalBox{background:#fff;padding:16px;border-radius:16px;width:90%}
 .setRow{display:flex;justify-content:space-between;margin-top:4px}
-
-.exercise-img{
-width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px;
-}
-
-.infoBtn{
-position:absolute;
-right:8px;
-top:8px;
-width:24px;height:24px;border-radius:50%;
-display:flex;align-items:center;justify-content:center;font-weight:bold;
-}
-
+.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
+.infoBtn{position:absolute;right:8px;top:8px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold}
 .up{color:#34c759}
 .down{color:#ff3b30}
 </style>
@@ -74,16 +36,15 @@ display:flex;align-items:center;justify-content:center;font-weight:bold;
 
 <script>
 
-window.onload=()=>{
-
+// ===== FIREBASE =====
 firebase.initializeApp({
 apiKey:"AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
 authDomain:"workout-app-80e26.firebaseapp.com",
 projectId:"workout-app-80e26"
 });
-
 const db=firebase.firestore();
 
+// ===== DATA =====
 let data=JSON.parse(localStorage.getItem('workouts'))||[];
 let dragIndex=null;
 
@@ -97,7 +58,6 @@ db.collection("users").doc("main").set({workouts:data});
 db.collection("users").doc("main").onSnapshot(doc=>{
 if(!doc.exists)return;
 let cloud=doc.data().workouts||[];
-
 if(JSON.stringify(cloud)!==JSON.stringify(data)){
 data=cloud;
 localStorage.setItem('workouts',JSON.stringify(data));
@@ -105,20 +65,19 @@ home();
 }
 });
 
-// ===== DRAG (ТОЛЬКО ЗА РУЧКУ) =====
+// ===== DRAG =====
 function dragInit(list,arr,render){
-
 let items=list.children;
 
 for(let i=0;i<items.length;i++){
-
 let handle=items[i].querySelector('.drag');
 
-handle.onmousedown=()=>{
+handle.onmousedown=(e)=>{
+e.stopPropagation();
 dragIndex=i;
 
-document.onmouseup=(e)=>{
-let el=document.elementFromPoint(e.clientX,e.clientY)?.closest('.card');
+document.onmouseup=(ev)=>{
+let el=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.card');
 if(!el)return;
 
 let children=[...list.children];
@@ -134,13 +93,11 @@ render();
 document.onmouseup=null;
 };
 };
-
 }
 }
 
 // ===== HOME =====
 function home(){
-
 app.innerHTML=`
 <h2>Тренировки</h2>
 <div id="list"></div>
@@ -152,13 +109,11 @@ app.innerHTML=`
 let list=document.getElementById('list');
 
 data.forEach((w,i)=>{
-
 let d=document.createElement('div');
 d.className='card '+(w.done?'done':'');
 
 d.innerHTML=`
 <div class="drag">≡</div>
-
 <b>${w.name}</b>
 
 <div class="row">
@@ -178,7 +133,6 @@ dragInit(list,data,home);
 
 // ===== WORKOUT =====
 function openW(wi){
-
 let w=data[wi];
 
 app.innerHTML=`
@@ -194,7 +148,6 @@ app.innerHTML=`
 let list=document.getElementById('list');
 
 w.exercises.forEach((e,ei)=>{
-
 let bg=e.special?'background:#d0e7ff':e.extra?'background:#d4f8d4':'';
 
 let html='';
@@ -208,8 +161,8 @@ let diff='';
 if(oldS&&newS){
 let ow=parseFloat(oldS);
 let nw=parseFloat(newS);
-if(nw>ow) diff='↑';
-if(nw<ow) diff='↓';
+if(nw>ow) diff='<span class="up">↑</span>';
+if(nw<ow) diff='<span class="down">↓</span>';
 }
 
 html+=`
@@ -250,7 +203,6 @@ ${e.showInfo?`
 `;
 
 list.appendChild(d);
-
 });
 
 dragInit(list,w.exercises,()=>openW(wi));
@@ -260,7 +212,6 @@ dragInit(list,w.exercises,()=>openW(wi));
 function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
 function editW(i){let n=prompt('Название',data[i].name);if(n){data[i].name=n;save();home();}}
 function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
-
 function done(i){data[i].done=true;save();home();}
 function undone(i){delete data[i].done;save();home();}
 
@@ -370,9 +321,8 @@ delete e.newSets;
 save();openW(wi);
 }
 
+// ===== START =====
 home();
-
-};
 
 </script>
 
