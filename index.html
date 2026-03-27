@@ -11,20 +11,67 @@
 <style>
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;position:relative}
+
+.card{
+background:#fff;
+border-radius:16px;
+padding:12px;
+margin-bottom:12px;
+position:relative;
+box-shadow:0 4px 10px rgba(0,0,0,.05);
+}
+
 .done{background:#e8f8ee}
+
 .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
+
+button{
+padding:6px 8px;
+border:none;
+border-radius:8px;
+background:#007aff;
+color:#fff;
+}
+
 .green{background:#34c759}
 .red{background:#ff3b30}
 .yellow{background:#ffcc00;color:#000}
 .gray{background:#ccc;color:#000}
+
 input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
-.modalBox{background:#fff;padding:16px;border-radius:16px;width:90%}
-.setRow{display:flex;justify-content:space-between;margin-top:4px}
-.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
-.infoBtn{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold}
+
+.modal{
+position:fixed;inset:0;
+background:rgba(0,0,0,.3);
+display:flex;align-items:center;justify-content:center;
+}
+
+.modalBox{
+background:#fff;padding:16px;border-radius:16px;width:90%;
+}
+
+.setRow{
+display:flex;justify-content:space-between;margin-top:4px;
+}
+
+.exercise-img{
+width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px;
+}
+
+.infoBtn{
+position:absolute;top:8px;right:8px;
+width:24px;height:24px;border-radius:50%;
+display:flex;align-items:center;justify-content:center;font-weight:bold;
+}
+
+.drag-handle{
+position:absolute;
+top:8px;left:8px;
+font-size:18px;
+cursor:grab;
+opacity:.5;
+}
+
 .up{color:#34c759}
 .down{color:#ff3b30}
 </style>
@@ -45,13 +92,15 @@ projectId:"workout-app-80e26"
 const db=firebase.firestore();
 
 let data=JSON.parse(localStorage.getItem('workouts'))||[];
-let dragW=null, dragE=null;
+let dragIndex=null;
 
+// ===== SAVE =====
 function save(){
 localStorage.setItem('workouts',JSON.stringify(data));
 db.collection("users").doc("main").set({workouts:data});
 }
 
+// ===== SYNC =====
 db.collection("users").doc("main").onSnapshot(doc=>{
 if(!doc.exists)return;
 let cloud=doc.data().workouts||[];
@@ -62,24 +111,67 @@ home();
 }
 });
 
+// ===== DRAG LOGIC =====
+function makeDrag(list,arr,onUpdate){
+
+let items=list.children;
+
+for(let i=0;i<items.length;i++){
+
+let handle=items[i].querySelector('.drag-handle');
+
+handle.onpointerdown=(e)=>{
+dragIndex=i;
+
+document.onpointermove=(ev)=>{
+let target=document.elementFromPoint(ev.clientX,ev.clientY);
+let card=target.closest('.card');
+if(!card)return;
+
+let children=[...list.children];
+let overIndex=children.indexOf(card);
+
+if(overIndex!==dragIndex){
+let moved=arr.splice(dragIndex,1)[0];
+arr.splice(overIndex,0,moved);
+dragIndex=overIndex;
+onUpdate();
+}
+};
+
+document.onpointerup=()=>{
+document.onpointermove=null;
+document.onpointerup=null;
+save();
+};
+};
+
+}
+
+}
+
 // ===== HOME =====
 function home(){
-app.innerHTML=`<h2>Тренировки</h2><div id="list"></div>
-<input id="nw"><button onclick="addW()">+</button>`;
+
+app.innerHTML=`<h2>Тренировки</h2>
+<div id="list"></div>
+
+<div class="row">
+<input id="nw">
+<button onclick="addW()">+</button>
+</div>`;
 
 let list=document.getElementById('list');
 
 data.forEach((w,i)=>{
+
 let d=document.createElement('div');
 d.className='card '+(w.done?'done':'');
-d.draggable=true;
-
-d.ondragstart=()=>dragW=i;
-d.ondrop=()=>{let m=data.splice(dragW,1)[0];data.splice(i,0,m);save();home();}
-d.ondragover=e=>e.preventDefault();
 
 d.innerHTML=`
+<div class="drag-handle">≡</div>
 <b>${w.name}</b>
+
 <div class="row">
 <button onclick="openW(${i})">Открыть</button>
 <button onclick="editW(${i})">✏️</button>
@@ -88,21 +180,29 @@ d.innerHTML=`
 <button class="red" onclick="delW(${i})">🗑</button>
 </div>
 `;
+
 list.appendChild(d);
 });
+
+makeDrag(list,data,home);
 }
 
 // ===== WORKOUT =====
 function openW(wi){
+
 let w=data[wi];
 
-app.innerHTML=`<button onclick="home()">←</button>
+app.innerHTML=`
+<button onclick="home()">←</button>
 <h2>${w.name}</h2>
 <div id="list"></div>
 
+<div class="row">
 <button onclick="addE(${wi})">Добавить</button>
 <button onclick="addE(${wi},'special')">Особое</button>
-<button onclick="addE(${wi},'extra')">Доп</button>`;
+<button onclick="addE(${wi},'extra')">Доп</button>
+</div>
+`;
 
 let list=document.getElementById('list');
 
@@ -110,7 +210,7 @@ w.exercises.forEach((e,ei)=>{
 
 let bg=e.special?'background:#d0e7ff':e.extra?'background:#d4f8d4':'';
 
-let setsHTML='';
+let html='';
 let max=Math.max(e.sets?.length||0,e.newSets?.length||0);
 
 for(let i=0;i<max;i++){
@@ -125,34 +225,30 @@ if(nw>ow) diff='<span class="up">↑</span>';
 if(nw<ow) diff='<span class="down">↓</span>';
 }
 
-setsHTML+=`<div class="setRow">
+html+=`
+<div class="setRow">
 <span>${oldS?`Подход ${i+1}: ${oldS}`:''}</span>
 <span>${newS||''} ${diff}</span>
 </div>`;
 }
 
-let infoColor=e.info?'yellow':'gray';
-
 let d=document.createElement('div');
 d.className='card';
 d.style=bg;
-d.draggable=true;
-
-d.ondragstart=()=>dragE=ei;
-d.ondrop=()=>{let m=w.exercises.splice(dragE,1)[0];w.exercises.splice(ei,0,m);save();openW(wi);}
-d.ondragover=e=>e.preventDefault();
 
 d.innerHTML=`
+<div class="drag-handle">≡</div>
+
 <b>${e.name}</b>
 
-<div class="infoBtn ${infoColor}" onclick="toggleInfo(${wi},${ei})">!</div>
+<div class="infoBtn ${e.info?'yellow':'gray'}" onclick="toggleInfo(${wi},${ei})">!</div>
 
 <button onclick="editE(${wi},${ei})">✏️</button>
 <button class="red" onclick="delE(${wi},${ei})">🗑</button>
 
 ${e.img?`<img src="${e.img}" class="exercise-img">`:''}
 
-${setsHTML}
+${html}
 
 <div class="row">
 <button onclick="openSets(${wi},${ei})">Подходы</button>
@@ -167,14 +263,16 @@ ${e.showInfo?`
 `;
 
 list.appendChild(d);
+
 });
+
+makeDrag(list,w.exercises,()=>openW(wi));
 }
 
-// ===== FUNCTIONS =====
+// ===== BASIC =====
 function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
-function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
 function editW(i){let n=prompt('Название',data[i].name);if(n){data[i].name=n;save();home();}}
-
+function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
 function done(i){data[i].done=true;save();home();}
 function undone(i){delete data[i].done;save();home();}
 
@@ -281,7 +379,6 @@ save();openW(wi);
 home();
 
 });
-
 </script>
 
 </body>
