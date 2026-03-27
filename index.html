@@ -1,56 +1,224 @@
-<!-- ВАЖНО: я показываю только ИЗМЕНЕННЫЕ части -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Журнал тренировок</title>
 
-<!-- 1. ЗАМЕНИ save() -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{font-family:-apple-system;background:#f2f2f7;margin:0}
+.container{max-width:420px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,.05)}
+.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
+button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
+.green{background:#34c759}
+.red{background:#ff3b30}
+.yellow{background:#ffcc00;color:#000}
+.row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.title{font-size:20px;font-weight:600;margin-bottom:10px}
+</style>
+
+</head>
+<body>
+
+<div class="container" id="app"></div>
+
 <script>
-async function save() {
-  localStorage.setItem('workouts', JSON.stringify(data));
-  await saveCloud(data);
-}
-</script>
 
-<!-- 2. ВСТАВЬ В САМЫЙ НИЗ ПЕРЕД </body> -->
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+// 🔥 FIREBASE INIT
 const firebaseConfig = {
   apiKey: "AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
   authDomain: "workout-app-80e26.firebaseapp.com",
   projectId: "workout-app-80e26",
-  storageBucket: "workout-app-80e26.firebasestorage.app",
-  messagingSenderId: "725512607519",
-  appId: "1:725512607519:web:d283decd352f5f7d7c422a"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-// сохранить в облако
-window.saveCloud = async function(data){
-  await setDoc(doc(db, "users", "main"), {
+// 🔥 DATA
+let data = JSON.parse(localStorage.getItem('workouts')) || [];
+
+// 🔥 SAVE
+async function save(){
+  localStorage.setItem('workouts', JSON.stringify(data));
+
+  await db.collection("users").doc("main").set({
     workouts: data
   });
 }
 
-// загрузить из облака
-window.loadCloud = async function(){
-  const docSnap = await getDoc(doc(db, "users", "main"));
-  if(docSnap.exists()){
-    return docSnap.data().workouts;
-  }
-  return [];
-}
+// 🔥 LOAD
+async function load(){
+  const doc = await db.collection("users").doc("main").get();
 
-// ЗАГРУЗКА ПРИ СТАРТЕ
-(async () => {
-  const cloud = await loadCloud();
-
-  if(cloud && cloud.length){
-    data = cloud;
+  if(doc.exists){
+    data = doc.data().workouts || [];
     localStorage.setItem('workouts', JSON.stringify(data));
   }
+}
 
+// -------- HOME --------
+function home(){
+const app=document.getElementById('app');
+
+app.innerHTML=`
+<div class="title">Тренировки</div>
+<div id="list"></div>
+
+<input id="nw" placeholder="Новая тренировка">
+<button onclick="addW()">Добавить</button>
+
+<div class="row">
+<button class="green" onclick="exportData()">Экспорт</button>
+<button onclick="importData()">Импорт</button>
+</div>
+`;
+
+const list=document.getElementById('list');
+
+data.forEach((w,i)=>{
+const d=document.createElement('div');
+d.className='card';
+
+d.innerHTML=`
+<b>${w.name}</b>
+<div class="row">
+<button onclick="openW(${i})">Открыть</button>
+</div>
+`;
+
+list.appendChild(d);
+});
+}
+
+// -------- ADD --------
+function addW(){
+let v=document.getElementById('nw').value;
+if(!v)return;
+
+data.push({name:v,exercises:[]});
+save();
+home();
+}
+
+// -------- OPEN --------
+function openW(i){
+let w=data[i];
+
+const app=document.getElementById('app');
+
+app.innerHTML=`
+<button onclick="home()">←</button>
+<div class="title">${w.name}</div>
+<div id="list"></div>
+
+<button onclick="addE(${i})">Добавить упражнение</button>
+`;
+
+const list=document.getElementById('list');
+
+w.exercises.forEach((e,idx)=>{
+
+let setsHTML='';
+(e.sets||[]).forEach((s,j)=>{
+setsHTML+=`<div>Подход ${j+1}: ${s}</div>`;
+});
+
+const d=document.createElement('div');
+d.className='card';
+
+d.innerHTML=`
+<b>${e.name}</b>
+${e.img?`<img src="${e.img}" class="exercise-img">`:''}
+
+${setsHTML}
+
+<div class="row">
+<button onclick="addSet(${i},${idx})">Подходы</button>
+<button onclick="newRes(${i},${idx})">Новый результат</button>
+</div>
+`;
+
+list.appendChild(d);
+});
+}
+
+// -------- EXERCISE --------
+function addE(wi){
+data[wi].exercises.push({name:'Новое',sets:[]});
+save();
+openW(wi);
+}
+
+// -------- SETS --------
+function addSet(wi,ei){
+let w=prompt('Вес');
+let r=prompt('Повторы');
+
+if(!w||!r)return;
+
+data[wi].exercises[ei].sets.push(w+'x'+r);
+save();
+openW(wi);
+}
+
+// -------- NEW RESULT --------
+function newRes(wi,ei){
+let w=prompt('Вес');
+let r=prompt('Повторы');
+
+if(!w||!r)return;
+
+data[wi].exercises[ei].sets.push(w+'x'+r);
+save();
+openW(wi);
+}
+
+// -------- EXPORT --------
+function exportData(){
+const dataStr = localStorage.getItem('workouts') || '[]';
+
+const blob = new Blob([dataStr], {type: "application/json"});
+const url = URL.createObjectURL(blob);
+
+const a = document.createElement('a');
+a.href = url;
+a.download = 'workouts.json';
+a.click();
+}
+
+// -------- IMPORT --------
+function importData(){
+const input = document.createElement('input');
+input.type = 'file';
+
+input.onchange = function(e){
+const file = e.target.files[0];
+
+const reader = new FileReader();
+
+reader.onload = function(event){
+localStorage.setItem('workouts', event.target.result);
+data = JSON.parse(event.target.result);
+home();
+};
+
+reader.readAsText(file);
+};
+
+input.click();
+}
+
+// 🔥 START
+(async function(){
+  await load();
   home();
 })();
+
 </script>
+
+</body>
+</html>
