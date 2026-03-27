@@ -5,28 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Журнал тренировок</title>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <style>
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,.05)}
-.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px}
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
 .green{background:#34c759}
-.red{background:#ff3b30}
-.yellow{background:#ffcc00;color:#000}
 .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 .title{font-size:20px;font-weight:600;margin-bottom:10px}
-.setRow{display:flex;justify-content:space-between;margin-top:4px}
-.plus{color:#34c759}
-.minus{color:#ff3b30}
 </style>
 </head>
 
 <body>
+
 <div class="container" id="app"></div>
 
 <script>
@@ -51,34 +45,31 @@ function save(){
   db.collection("users").doc("main").set({
     workouts: data
   }).then(()=>{
-    console.log("Синхронизировано");
+    console.log("SYNC OK");
   });
 }
 
-// ===== LOAD CLOUD =====
-function loadCloud(){
-  return db.collection("users").doc("main").get().then(doc=>{
-    if(doc.exists){
-      return doc.data().workouts || [];
-    }
-    return null;
-  });
-}
-
-// ===== START =====
+// ===== LIVE SYNC =====
 function startApp(){
 
   // мгновенный запуск
   home();
 
-  // фоновая синхронизация
-  loadCloud().then(cloud=>{
-    if(cloud && JSON.stringify(cloud)!==JSON.stringify(data)){
-      data = cloud;
-      localStorage.setItem('workouts', JSON.stringify(data));
-      home();
-    }
-  });
+  // слушаем изменения из Firebase
+  db.collection("users").doc("main")
+    .onSnapshot((doc)=>{
+
+      if(!doc.exists) return;
+
+      const cloud = doc.data().workouts || [];
+
+      if(JSON.stringify(cloud)!==JSON.stringify(data)){
+        data = cloud;
+        localStorage.setItem('workouts', JSON.stringify(data));
+        home();
+      }
+
+    });
 
 }
 
@@ -92,11 +83,6 @@ app.innerHTML=`
 
 <input id="nw" placeholder="Новая тренировка">
 <button onclick="addW()">Добавить</button>
-
-<div class="row">
-<button class="green" onclick="exportData()">Экспорт</button>
-<button onclick="importData()">Импорт</button>
-</div>
 `;
 
 const list=document.getElementById('list');
@@ -154,8 +140,6 @@ d.className='card';
 
 d.innerHTML=`
 <b>${e.name}</b>
-${e.img?`<img src="${e.img}" class="exercise-img">`:''}
-
 ${setsHTML}
 
 <div class="row">
@@ -199,45 +183,10 @@ save();
 openW(wi);
 }
 
-// ===== EXPORT =====
-function exportData(){
-const dataStr = localStorage.getItem('workouts') || '[]';
-
-const blob = new Blob([dataStr], {type: "application/json"});
-const url = URL.createObjectURL(blob);
-
-const a = document.createElement('a');
-a.href = url;
-a.download = 'workouts.json';
-a.click();
-}
-
-// ===== IMPORT =====
-function importData(){
-const input = document.createElement('input');
-input.type = 'file';
-
-input.onchange = function(e){
-const file = e.target.files[0];
-
-const reader = new FileReader();
-
-reader.onload = function(event){
-localStorage.setItem('workouts', event.target.result);
-data = JSON.parse(event.target.result);
-save();
-home();
-};
-
-reader.readAsText(file);
-};
-
-input.click();
-}
-
-// ===== START APP =====
+// ===== START =====
 startApp();
 
 </script>
+
 </body>
 </html>
