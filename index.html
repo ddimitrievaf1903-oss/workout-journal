@@ -1,7 +1,42 @@
-<!-- ТОЛЬКО SCRIPT, твой HTML и CSS оставь -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workout</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{font-family:-apple-system;background:#f2f2f7;margin:0}
+.container{max-width:420px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;position:relative}
+.done{background:#e8f8ee}
+.row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
+.green{background:#34c759}
+.red{background:#ff3b30}
+.yellow{background:#ffcc00;color:#000}
+.gray{background:#ccc;color:#000}
+input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
+.modalBox{background:#fff;padding:16px;border-radius:16px;width:90%}
+.setRow{display:flex;justify-content:space-between;margin-top:4px}
+.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
+.infoBtn{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold}
+.up{color:#34c759}
+.down{color:#ff3b30}
+</style>
+</head>
+
+<body>
+<div class="container" id="app"></div>
+
 <script>
 
-// ===== FIREBASE =====
+window.addEventListener("load",()=>{
+
 firebase.initializeApp({
 apiKey:"AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
 authDomain:"workout-app-80e26.firebaseapp.com",
@@ -9,17 +44,14 @@ projectId:"workout-app-80e26"
 });
 const db=firebase.firestore();
 
-// ===== DATA =====
 let data=JSON.parse(localStorage.getItem('workouts'))||[];
 let dragW=null, dragE=null;
 
-// ===== SAVE =====
 function save(){
 localStorage.setItem('workouts',JSON.stringify(data));
 db.collection("users").doc("main").set({workouts:data});
 }
 
-// ===== SYNC =====
 db.collection("users").doc("main").onSnapshot(doc=>{
 if(!doc.exists)return;
 let cloud=doc.data().workouts||[];
@@ -32,36 +64,22 @@ home();
 
 // ===== HOME =====
 function home(){
-app.innerHTML=`
-<h2>Тренировки</h2>
-<div id="list"></div>
-
-<div class="row">
-<input id="nw">
-<button onclick="addW()">+</button>
-</div>
-`;
+app.innerHTML=`<h2>Тренировки</h2><div id="list"></div>
+<input id="nw"><button onclick="addW()">+</button>`;
 
 let list=document.getElementById('list');
 
 data.forEach((w,i)=>{
-
 let d=document.createElement('div');
 d.className='card '+(w.done?'done':'');
 d.draggable=true;
 
 d.ondragstart=()=>dragW=i;
+d.ondrop=()=>{let m=data.splice(dragW,1)[0];data.splice(i,0,m);save();home();}
 d.ondragover=e=>e.preventDefault();
-d.ondrop=()=>{
-if(dragW===i)return;
-let m=data.splice(dragW,1)[0];
-data.splice(i,0,m);
-save();home();
-};
 
 d.innerHTML=`
 <b>${w.name}</b>
-
 <div class="row">
 <button onclick="openW(${i})">Открыть</button>
 <button onclick="editW(${i})">✏️</button>
@@ -70,7 +88,6 @@ d.innerHTML=`
 <button class="red" onclick="delW(${i})">🗑</button>
 </div>
 `;
-
 list.appendChild(d);
 });
 }
@@ -79,29 +96,22 @@ list.appendChild(d);
 function openW(wi){
 let w=data[wi];
 
-app.innerHTML=`
-<button onclick="home()">←</button>
+app.innerHTML=`<button onclick="home()">←</button>
 <h2>${w.name}</h2>
 <div id="list"></div>
 
-<div class="row">
 <button onclick="addE(${wi})">Добавить</button>
 <button onclick="addE(${wi},'special')">Особое</button>
-<button onclick="addE(${wi},'extra')">Доп</button>
-</div>
-`;
+<button onclick="addE(${wi},'extra')">Доп</button>`;
 
 let list=document.getElementById('list');
 
 w.exercises.forEach((e,ei)=>{
 
-let bg='';
-if(e.special) bg='background:#d0e7ff';
-if(e.extra) bg='background:#d4f8d4';
-
-let max=Math.max(e.sets?.length||0,e.newSets?.length||0);
+let bg=e.special?'background:#d0e7ff':e.extra?'background:#d4f8d4':'';
 
 let setsHTML='';
+let max=Math.max(e.sets?.length||0,e.newSets?.length||0);
 
 for(let i=0;i<max;i++){
 let oldS=e.sets?.[i]||'';
@@ -111,16 +121,14 @@ let diff='';
 if(oldS&&newS){
 let ow=parseFloat(oldS);
 let nw=parseFloat(newS);
-if(nw>ow) diff='↑';
-if(nw<ow) diff='↓';
+if(nw>ow) diff='<span class="up">↑</span>';
+if(nw<ow) diff='<span class="down">↓</span>';
 }
 
-setsHTML+=`
-<div class="setRow">
+setsHTML+=`<div class="setRow">
 <span>${oldS?`Подход ${i+1}: ${oldS}`:''}</span>
 <span>${newS||''} ${diff}</span>
-</div>
-`;
+</div>`;
 }
 
 let infoColor=e.info?'yellow':'gray';
@@ -131,13 +139,8 @@ d.style=bg;
 d.draggable=true;
 
 d.ondragstart=()=>dragE=ei;
+d.ondrop=()=>{let m=w.exercises.splice(dragE,1)[0];w.exercises.splice(ei,0,m);save();openW(wi);}
 d.ondragover=e=>e.preventDefault();
-d.ondrop=()=>{
-if(dragE===ei)return;
-let m=w.exercises.splice(dragE,1)[0];
-w.exercises.splice(ei,0,m);
-save();openW(wi);
-};
 
 d.innerHTML=`
 <b>${e.name}</b>
@@ -167,38 +170,27 @@ list.appendChild(d);
 });
 }
 
-// ===== EDIT =====
-function editW(i){
-let n=prompt('Название',data[i].name);
-if(!n)return;
-data[i].name=n;
-save();home();
+// ===== FUNCTIONS =====
+function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
+function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
+function editW(i){let n=prompt('Название',data[i].name);if(n){data[i].name=n;save();home();}}
+
+function done(i){data[i].done=true;save();home();}
+function undone(i){delete data[i].done;save();home();}
+
+function addE(wi,type){
+data[wi].exercises.push({name:'Упражнение',sets:[],special:type==='special',extra:type==='extra'});
+save();openW(wi);
 }
 
 function editE(wi,ei){
 let e=data[wi].exercises[ei];
 let n=prompt('Название',e.name);
 let img=prompt('Фото',e.img||'');
-if(!n)return;
-e.name=n;
-e.img=img||'';
-save();openW(wi);
+if(n){e.name=n;e.img=img||'';save();openW(wi);}
 }
 
-// ===== STATUS =====
-function done(i){data[i].done=true;save();home();}
-function undone(i){delete data[i].done;save();home();}
-
-// ===== DELETE =====
-function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
 function delE(wi,ei){if(confirm('Удалить?')){data[wi].exercises.splice(ei,1);save();openW(wi);}}
-
-// ===== ADD =====
-function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
-function addE(wi,type){
-data[wi].exercises.push({name:'Упражнение',sets:[],special:type==='special',extra:type==='extra'});
-save();openW(wi);
-}
 
 // ===== INFO =====
 function toggleInfo(wi,ei){
@@ -286,7 +278,11 @@ delete e.newSets;
 save();openW(wi);
 }
 
-// ===== START =====
 home();
 
+});
+
 </script>
+
+</body>
+</html>
