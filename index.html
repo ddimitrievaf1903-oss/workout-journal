@@ -11,19 +11,48 @@
 <style>
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,.05)}
+
+.card{
+background:#fff;
+border-radius:16px;
+padding:12px;
+margin-bottom:12px;
+box-shadow:0 4px 10px rgba(0,0,0,.05);
+}
+
+.row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
 .green{background:#34c759}
-.red{background:#ff3b30}
 .yellow{background:#ffcc00;color:#000}
-.row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.red{background:#ff3b30}
+
 input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
-.modalBox{background:#fff;padding:16px;border-radius:16px;width:90%}
-.setRow{display:flex;justify-content:space-between;margin-top:4px}
+
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.3);
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.modalBox{
+background:#fff;
+padding:16px;
+border-radius:16px;
+width:90%;
+max-width:360px;
+}
+
+.setRow{
+display:flex;
+justify-content:space-between;
+margin-top:4px;
+}
+
 .up{color:#34c759}
 .down{color:#ff3b30}
-.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
 </style>
 </head>
 
@@ -32,28 +61,29 @@ input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
 
 <script>
 
-// FIREBASE
+// ===== FIREBASE =====
 firebase.initializeApp({
 apiKey:"AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
 authDomain:"workout-app-80e26.firebaseapp.com",
 projectId:"workout-app-80e26"
 });
-const db = firebase.firestore();
+const db=firebase.firestore();
 
-// DATA
-let data = JSON.parse(localStorage.getItem('workouts')) || [];
+// ===== DATA =====
+let data=JSON.parse(localStorage.getItem('workouts'))||[];
 let dragW=null, dragE=null;
 
-// SAVE
+// ===== SAVE =====
 function save(){
 localStorage.setItem('workouts',JSON.stringify(data));
 db.collection("users").doc("main").set({workouts:data});
 }
 
-// SYNC
+// ===== SYNC =====
 db.collection("users").doc("main").onSnapshot(doc=>{
 if(!doc.exists)return;
 let cloud=doc.data().workouts||[];
+
 if(JSON.stringify(cloud)!==JSON.stringify(data)){
 data=cloud;
 localStorage.setItem('workouts',JSON.stringify(data));
@@ -61,7 +91,7 @@ home();
 }
 });
 
-// HOME
+// ===== HOME =====
 function home(){
 app.innerHTML=`
 <h2>Тренировки</h2>
@@ -70,11 +100,6 @@ app.innerHTML=`
 <div class="row">
 <input id="nw" placeholder="Название">
 <button onclick="addW()">+</button>
-</div>
-
-<div class="row">
-<button onclick="exportData()">Экспорт</button>
-<button onclick="importData()">Импорт</button>
 </div>
 `;
 
@@ -106,7 +131,7 @@ list.appendChild(d);
 });
 }
 
-// WORKOUT
+// ===== WORKOUT =====
 function openW(wi){
 let w=data[wi];
 
@@ -164,16 +189,12 @@ save();openW(wi);
 
 d.innerHTML=`
 <b>${e.name}</b>
-<button onclick="editE(${wi},${ei})">✏️</button>
-<button class="red" onclick="delE(${wi},${ei})">🗑</button>
-
-${e.img?`<img src="${e.img}" class="exercise-img">`:''}
 
 ${html}
 
 <div class="row">
-<button onclick="setsModal(${wi},${ei})">Подходы</button>
-<button class="yellow" onclick="newModal(${wi},${ei})">Новый</button>
+<button onclick="openSets(${wi},${ei})">Подходы</button>
+<button class="yellow" onclick="openNew(${wi},${ei})">Новый результат</button>
 ${e.newSets?.length?`<button class="green" onclick="saveRes(${wi},${ei})">Сохранить</button>`:''}
 </div>
 `;
@@ -182,35 +203,8 @@ list.appendChild(d);
 });
 }
 
-// ADD
-function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
-function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
-function addE(wi,type){
-data[wi].exercises.push({name:'Упражнение',sets:[],special:type==='special',extra:type==='extra'});
-save();openW(wi);
-}
-
-// EDIT
-function editE(wi,ei){
-let e=data[wi].exercises[ei];
-let n=prompt('Название',e.name);
-if(!n)return;
-let img=prompt('Фото',e.img||'');
-e.name=n;
-e.img=img||'';
-save();openW(wi);
-}
-
-// DELETE
-function delE(wi,ei){
-if(confirm('Удалить упражнение?')){
-data[wi].exercises.splice(ei,1);
-save();openW(wi);
-}
-}
-
-// SETS
-function setsModal(wi,ei){
+// ===== SETS MODAL =====
+function openSets(wi,ei){
 let ex=data[wi].exercises[ei];
 let temp=[...(ex.sets||[])];
 
@@ -218,9 +212,11 @@ modal(`
 <h3>Подходы</h3>
 <div id="list"></div>
 
+<div class="row">
 <input id="w" placeholder="Вес">
 <input id="r" placeholder="Повторы">
 <button onclick="add()">+</button>
+</div>
 `,render);
 
 function render(){
@@ -243,19 +239,22 @@ if(!w||!r)return;
 
 temp.push(w+'x'+r);
 ex.sets=temp;
-
-save();render();openW(wi);
+save();
+render();
+openW(wi);
 };
 
 window.del=i=>{
 temp.splice(i,1);
 ex.sets=temp;
-save();render();openW(wi);
+save();
+render();
+openW(wi);
 };
 }
 
-// NEW RESULT
-function newModal(wi,ei){
+// ===== NEW RESULT MODAL (НЕ СТРАНИЦА) =====
+function openNew(wi,ei){
 let ex=data[wi].exercises[ei];
 let temp=[...(ex.newSets||[])];
 
@@ -263,9 +262,11 @@ modal(`
 <h3>Новый результат</h3>
 <div id="list"></div>
 
+<div class="row">
 <input id="w" placeholder="Вес">
 <input id="r" placeholder="Повторы">
 <button onclick="add()">+</button>
+</div>
 `,render);
 
 function render(){
@@ -288,26 +289,35 @@ if(!w||!r)return;
 
 temp.push(w+'x'+r);
 ex.newSets=temp.length?temp:null;
-
-save();render();openW(wi);
+save();
+render();
+openW(wi);
 };
 
 window.del=i=>{
 temp.splice(i,1);
 ex.newSets=temp.length?temp:null;
-save();render();openW(wi);
+save();
+render();
+openW(wi);
 };
 }
 
-// SAVE RESULT
+// ===== SAVE RESULT =====
 function saveRes(wi,ei){
 let e=data[wi].exercises[ei];
 e.sets=e.newSets;
 delete e.newSets;
-save();openW(wi);
+save();
+openW(wi);
 }
 
-// MODAL
+// ===== OTHER =====
+function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
+function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
+function addE(wi,type){data[wi].exercises.push({name:'Упражнение',sets:[]});save();openW(wi);}
+
+// ===== MODAL =====
 function modal(content,cb){
 let m=document.createElement('div');
 m.className='modal';
@@ -324,30 +334,7 @@ document.body.appendChild(m);
 setTimeout(cb,0);
 }
 
-// EXPORT / IMPORT
-function exportData(){
-let blob=new Blob([JSON.stringify(data)],{type:"application/json"});
-let a=document.createElement('a');
-a.href=URL.createObjectURL(blob);
-a.download='workouts.json';
-a.click();
-}
-
-function importData(){
-let i=document.createElement('input');
-i.type='file';
-i.onchange=e=>{
-let r=new FileReader();
-r.onload=x=>{
-data=JSON.parse(x.target.result);
-save();home();
-};
-r.readAsText(e.target.files[0]);
-};
-i.click();
-}
-
-// START
+// ===== START =====
 home();
 
 </script>
