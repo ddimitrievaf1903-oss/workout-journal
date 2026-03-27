@@ -11,7 +11,7 @@
 <style>
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;cursor:grab}
 .exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px}
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
 .green{background:#34c759}
@@ -31,11 +31,12 @@ firebase.initializeApp({
   authDomain:"workout-app-80e26.firebaseapp.com",
   projectId:"workout-app-80e26"
 });
-
 const db = firebase.firestore();
 
 // ===== DATA =====
 let data = JSON.parse(localStorage.getItem('workouts')) || [];
+let dragW=null;
+let dragE=null;
 
 // ===== SAVE =====
 function save(){
@@ -58,18 +59,30 @@ db.collection("users").doc("main")
 
 // ===== HOME =====
 function home(){
-let html = `<h2>Тренировки</h2><div id="list"></div>
+let html=`<h2>Тренировки</h2><div id="list"></div>
 <input id="nw"><button onclick="addW()">+</button>`;
 
 document.getElementById('app').innerHTML = html;
-
 let list = document.getElementById('list');
 
 data.forEach((w,i)=>{
 let d=document.createElement('div');
 d.className='card';
+d.draggable=true;
+
+d.ondragstart=()=>dragW=i;
+d.ondragover=e=>e.preventDefault();
+
+d.ondrop=()=>{
+if(dragW===i)return;
+let moved=data.splice(dragW,1)[0];
+data.splice(i,0,moved);
+save(); home();
+};
+
 d.innerHTML=`<b>${w.name}</b><br>
 <button onclick="openW(${i})">Открыть</button>`;
+
 list.appendChild(d);
 });
 }
@@ -83,34 +96,40 @@ save(); home();
 }
 
 // ===== OPEN WORKOUT =====
-function openW(i){
-let w=data[i];
+function openW(wi){
+let w=data[wi];
 
 let html=`<button onclick="home()">←</button><h2>${w.name}</h2>
 <div id="list"></div>
 
-<button onclick="addE(${i},'normal')">Добавить</button>
-<button onclick="addE(${i},'special')">Особое</button>
-<button onclick="addE(${i},'extra')">Доп</button>`;
+<button onclick="addE(${wi},'normal')">Добавить</button>
+<button onclick="addE(${wi},'special')">Особое</button>
+<button onclick="addE(${wi},'extra')">Доп</button>`;
 
 document.getElementById('app').innerHTML=html;
-
 let list=document.getElementById('list');
 
 w.exercises.forEach((e,ei)=>{
 
 let sets='';
-(e.sets||[]).forEach((s,j)=>{
-sets+=`<div>${s}</div>`;
-});
+(e.sets||[]).forEach(s=>sets+=`<div>${s}</div>`);
 
 let newSets='';
-(e.newSets||[]).forEach((s,j)=>{
-newSets+=`<div>${s}</div>`;
-});
+(e.newSets||[]).forEach(s=>newSets+=`<div>${s}</div>`);
 
 let d=document.createElement('div');
 d.className='card';
+d.draggable=true;
+
+d.ondragstart=()=>dragE=ei;
+d.ondragover=e=>e.preventDefault();
+
+d.ondrop=()=>{
+if(dragE===ei)return;
+let moved=data[wi].exercises.splice(dragE,1)[0];
+data[wi].exercises.splice(ei,0,moved);
+save(); openW(wi);
+};
 
 d.innerHTML=`
 <b>${e.name}</b>
@@ -120,9 +139,9 @@ ${sets}
 ${newSets}
 
 <div class="row">
-<button onclick="addSet(${i},${ei})">Подходы</button>
-<button class="yellow" onclick="newRes(${i},${ei})">Новый результат</button>
-${e.newSets?`<button class="green" onclick="saveRes(${i},${ei})">Сохранить</button>`:''}
+<button onclick="addSet(${wi},${ei})">Подходы</button>
+<button class="yellow" onclick="newRes(${wi},${ei})">Новый результат</button>
+${e.newSets?`<button class="green" onclick="saveRes(${wi},${ei})">Сохранить</button>`:''}
 </div>
 `;
 
@@ -171,7 +190,6 @@ function saveRes(wi,ei){
 let ex=data[wi].exercises[ei];
 ex.sets = ex.newSets;
 delete ex.newSets;
-
 save(); openW(wi);
 }
 
