@@ -11,16 +11,18 @@
 <style>
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;cursor:grab}
-.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;cursor:grab;box-shadow:0 4px 10px rgba(0,0,0,.05)}
+.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
 .green{background:#34c759}
 .yellow{background:#ffcc00;color:#000}
 .red{background:#ff3b30}
+.secondary{background:#e5e5ea;color:#000}
 .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.set{display:flex;justify-content:space-between}
-.up{color:#34c759}
-.down{color:#ff3b30}
+.set{display:flex;justify-content:space-between;gap:8px;margin-top:4px}
+.up{color:#34c759;font-weight:700}
+.down{color:#ff3b30;font-weight:700}
+input{padding:8px;border:1px solid #ccc;border-radius:8px}
 </style>
 </head>
 
@@ -28,235 +30,300 @@ button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#f
 <div class="container" id="app"></div>
 
 <script>
+const appEl = document.getElementById('app');
 
 // ===== FIREBASE =====
 firebase.initializeApp({
-apiKey:"AIzaSy...",
-authDomain:"workout-app-80e26.firebaseapp.com",
-projectId:"workout-app-80e26"
+  apiKey:"AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
+  authDomain:"workout-app-80e26.firebaseapp.com",
+  projectId:"workout-app-80e26"
 });
 const db = firebase.firestore();
 
 // ===== DATA =====
 let data = JSON.parse(localStorage.getItem('workouts')) || [];
-let dragW=null, dragE=null;
+let dragW = null;
+let dragE = null;
 
 // ===== SAVE =====
 function save(){
-localStorage.setItem('workouts', JSON.stringify(data));
-db.collection("users").doc("main").set({workouts:data});
+  localStorage.setItem('workouts', JSON.stringify(data));
+  db.collection("users").doc("main").set({ workouts:data }).catch(err=>{
+    console.error("Firebase save error:", err);
+  });
 }
 
-// ===== SYNC =====
-db.collection("users").doc("main")
-.onSnapshot(doc=>{
-if(!doc.exists)return;
-let cloud = doc.data().workouts || [];
-
-if(JSON.stringify(cloud)!==JSON.stringify(data)){
-data=cloud;
-localStorage.setItem('workouts', JSON.stringify(data));
-home();
-}
+// ===== LIVE SYNC =====
+db.collection("users").doc("main").onSnapshot(doc=>{
+  if(!doc.exists) return;
+  const cloud = doc.data().workouts || [];
+  if(JSON.stringify(cloud)!==JSON.stringify(data)){
+    data = cloud;
+    localStorage.setItem('workouts', JSON.stringify(data));
+    home();
+  }
+}, err => {
+  console.error("Firebase sync error:", err);
 });
 
 // ===== HOME =====
 function home(){
-let html=`<h2>Тренировки</h2><div id="list"></div>
-<input id="nw"><button onclick="addW()">+</button>`;
+  let html = `
+    <h2>Тренировки</h2>
+    <div id="list"></div>
 
-app.innerHTML=html;
-let list=document.getElementById('list');
+    <div class="row">
+      <input id="nw" placeholder="Новая тренировка" style="flex:1">
+      <button onclick="addW()">+</button>
+    </div>
 
-data.forEach((w,i)=>{
-let d=document.createElement('div');
-d.className='card';
-d.draggable=true;
+    <div class="row">
+      <button class="green" onclick="exportData()">Экспорт</button>
+      <button class="secondary" onclick="importData()">Импорт</button>
+    </div>
+  `;
 
-d.ondragstart=()=>dragW=i;
-d.ondragover=e=>e.preventDefault();
-d.ondrop=()=>{
-if(dragW===i)return;
-let m=data.splice(dragW,1)[0];
-data.splice(i,0,m);
-save(); home();
-};
+  appEl.innerHTML = html;
+  const list = document.getElementById('list');
 
-d.innerHTML=`<b>${w.name}</b>
-<div class="row">
-<button onclick="openW(${i})">Открыть</button>
-<button class="red" onclick="delW(${i})">Удалить</button>
-</div>`;
+  data.forEach((w,i)=>{
+    let d = document.createElement('div');
+    d.className = 'card';
+    d.draggable = true;
 
-list.appendChild(d);
-});
+    d.ondragstart = () => dragW = i;
+    d.ondragover = e => e.preventDefault();
+    d.ondrop = () => {
+      if(dragW === i || dragW === null) return;
+      let moved = data.splice(dragW,1)[0];
+      data.splice(i,0,moved);
+      dragW = null;
+      save();
+      home();
+    };
+
+    d.innerHTML = `
+      <b>${escapeHtml(w.name)}</b>
+      <div class="row">
+        <button onclick="openW(${i})">Открыть</button>
+        <button class="red" onclick="delW(${i})">Удалить</button>
+      </div>
+    `;
+    list.appendChild(d);
+  });
+}
+
+// ===== HELPERS =====
+function escapeHtml(text){
+  const div = document.createElement('div');
+  div.textContent = text ?? '';
+  return div.innerHTML;
 }
 
 // ===== ADD WORKOUT =====
 function addW(){
-let v=document.getElementById('nw').value;
-if(!v)return;
-data.push({name:v,exercises:[]});
-save(); home();
+  let input = document.getElementById('nw');
+  let v = input.value.trim();
+  if(!v) return;
+  data.push({ name:v, exercises:[] });
+  input.value = '';
+  save();
+  home();
 }
 
 // ===== DELETE WORKOUT =====
 function delW(i){
-if(!confirm('Удалить тренировку?'))return;
-data.splice(i,1);
-save(); home();
+  if(!confirm('Удалить тренировку?')) return;
+  data.splice(i,1);
+  save();
+  home();
 }
 
 // ===== OPEN WORKOUT =====
 function openW(wi){
-let w=data[wi];
+  let w = data[wi];
 
-app.innerHTML=`<button onclick="home()">←</button>
-<h2>${w.name}</h2>
-<div id="list"></div>
+  appEl.innerHTML = `
+    <button class="secondary" onclick="home()">←</button>
+    <h2>${escapeHtml(w.name)}</h2>
+    <div id="list"></div>
 
-<button onclick="addE(${wi},'normal')">Добавить</button>
-<button onclick="addE(${wi},'special')">Особое</button>
-<button onclick="addE(${wi},'extra')">Доп</button>`;
+    <div class="row">
+      <button onclick="addE(${wi},'normal')">Добавить</button>
+      <button onclick="addE(${wi},'special')">Особое</button>
+      <button class="green" onclick="addE(${wi},'extra')">Доп</button>
+    </div>
+  `;
 
-let list=document.getElementById('list');
+  let list = document.getElementById('list');
 
-w.exercises.forEach((e,ei)=>{
+  w.exercises.forEach((e,ei)=>{
+    let d = document.createElement('div');
+    d.className = 'card';
+    d.draggable = true;
 
-let d=document.createElement('div');
-d.className='card';
-d.draggable=true;
+    d.ondragstart = () => dragE = ei;
+    d.ondragover = e => e.preventDefault();
+    d.ondrop = () => {
+      if(dragE === ei || dragE === null) return;
+      let moved = data[wi].exercises.splice(dragE,1)[0];
+      data[wi].exercises.splice(ei,0,moved);
+      dragE = null;
+      save();
+      openW(wi);
+    };
 
-d.ondragstart=()=>dragE=ei;
-d.ondragover=e=>e.preventDefault();
-d.ondrop=()=>{
-if(dragE===ei)return;
-let m=w.exercises.splice(dragE,1)[0];
-w.exercises.splice(ei,0,m);
-save(); openW(wi);
-};
+    let setsHTML = '';
+    const maxLen = Math.max((e.sets||[]).length, (e.newSets||[]).length);
 
-let setsHTML='';
-(e.sets||[]).forEach((s,i)=>{
-let newS=e.newSets?.[i];
-let diff='';
-if(newS){
-let oldW=parseInt(s);
-let newW=parseInt(newS);
-if(newW>oldW) diff='<span class="up">↑</span>';
-if(newW<oldW) diff='<span class="down">↓</span>';
-}
-setsHTML+=`<div class="set">${s} ${newS||''} ${diff}</div>`;
-});
+    for(let i=0;i<maxLen;i++){
+      const oldSet = e.sets?.[i] || '';
+      const newSet = e.newSets?.[i] || '';
+      let diff = '';
 
-d.innerHTML=`
-<b>${e.name}</b>
-<button onclick="editE(${wi},${ei})">✏️</button>
-<button class="red" onclick="delE(${wi},${ei})">🗑</button>
+      if(oldSet && newSet){
+        const oldW = parseFloat(String(oldSet).split('x')[0]) || 0;
+        const newW = parseFloat(String(newSet).split('x')[0]) || 0;
+        if(newW > oldW) diff = '<span class="up">↑</span>';
+        if(newW < oldW) diff = '<span class="down">↓</span>';
+      }
 
-${e.img?`<img src="${e.img}" class="exercise-img">`:''}
+      setsHTML += `
+        <div class="set">
+          <span>${oldSet ? 'Подход ' + (i+1) + ': ' + escapeHtml(oldSet) : ''}</span>
+          <span>${escapeHtml(newSet)} ${diff}</span>
+        </div>
+      `;
+    }
 
-${setsHTML}
+    d.innerHTML = `
+      <b>${escapeHtml(e.name)}</b>
+      <button onclick="editE(${wi},${ei})">✏️</button>
+      <button class="red" onclick="delE(${wi},${ei})">🗑</button>
 
-<div class="row">
-<button onclick="addSet(${wi},${ei})">Подходы</button>
-<button class="yellow" onclick="newRes(${wi},${ei})">Новый</button>
-${e.newSets?`<button class="green" onclick="saveRes(${wi},${ei})">Сохранить</button>`:''}
-</div>
-`;
+      ${e.img ? `<img src="${escapeHtml(e.img)}" class="exercise-img">` : ''}
 
-list.appendChild(d);
-});
+      ${setsHTML}
+
+      <div class="row">
+        <button onclick="addSet(${wi},${ei})">Подходы</button>
+        <button class="yellow" onclick="newRes(${wi},${ei})">Новый</button>
+        ${(e.newSets && e.newSets.length) ? `<button class="green" onclick="saveRes(${wi},${ei})">Сохранить</button>` : ''}
+      </div>
+    `;
+
+    list.appendChild(d);
+  });
 }
 
 // ===== ADD EXERCISE =====
 function addE(wi,type){
-data[wi].exercises.push({
-name:'Упражнение',
-img:'',
-sets:[],
-special:type=='special',
-extra:type=='extra'
-});
-save(); openW(wi);
+  data[wi].exercises.push({
+    name:'Упражнение',
+    img:'',
+    sets:[],
+    special:type==='special',
+    extra:type==='extra'
+  });
+  save();
+  openW(wi);
 }
 
 // ===== EDIT EXERCISE =====
 function editE(wi,ei){
-let e=data[wi].exercises[ei];
-let n=prompt('Название',e.name);
-let img=prompt('Фото',e.img);
-if(!n)return;
+  let e = data[wi].exercises[ei];
+  let n = prompt('Название', e.name);
+  if(!n) return;
 
-e.name=n;
-e.img=img||'';
-save(); openW(wi);
+  let img = prompt('Фото', e.img || '');
+  e.name = n;
+  e.img = img || '';
+
+  save();
+  openW(wi);
 }
 
 // ===== DELETE EXERCISE =====
 function delE(wi,ei){
-if(!confirm('Удалить упражнение?'))return;
-data[wi].exercises.splice(ei,1);
-save(); openW(wi);
+  if(!confirm('Удалить упражнение?')) return;
+  data[wi].exercises.splice(ei,1);
+  save();
+  openW(wi);
 }
 
-// ===== SET =====
+// ===== ADD SET =====
 function addSet(wi,ei){
-let w=prompt('Вес');
-let r=prompt('Повторы');
-if(!w||!r)return;
-data[wi].exercises[ei].sets.push(w+'x'+r);
-save(); openW(wi);
+  let w = prompt('Вес');
+  let r = prompt('Повторы');
+  if(!w || !r) return;
+
+  data[wi].exercises[ei].sets.push(w + 'x' + r);
+  save();
+  openW(wi);
 }
 
 // ===== NEW RESULT =====
 function newRes(wi,ei){
-let w=prompt('Вес');
-let r=prompt('Повторы');
-if(!w||!r)return;
+  let w = prompt('Вес');
+  let r = prompt('Повторы');
+  if(!w || !r) return;
 
-let ex=data[wi].exercises[ei];
-if(!ex.newSets) ex.newSets=[];
-ex.newSets.push(w+'x'+r);
+  let ex = data[wi].exercises[ei];
+  if(!ex.newSets) ex.newSets = [];
+  ex.newSets.push(w + 'x' + r);
 
-save(); openW(wi);
+  save();
+  openW(wi);
 }
 
 // ===== SAVE RESULT =====
 function saveRes(wi,ei){
-let ex=data[wi].exercises[ei];
-ex.sets=ex.newSets;
-delete ex.newSets;
-save(); openW(wi);
+  let ex = data[wi].exercises[ei];
+  ex.sets = [...(ex.newSets || [])];
+  delete ex.newSets;
+  save();
+  openW(wi);
 }
 
 // ===== EXPORT =====
 function exportData(){
-let blob=new Blob([JSON.stringify(data)],{type:"application/json"});
-let a=document.createElement('a');
-a.href=URL.createObjectURL(blob);
-a.download='workouts.json';
-a.click();
+  let blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'workouts.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 // ===== IMPORT =====
 function importData(){
-let i=document.createElement('input');
-i.type='file';
-i.onchange=e=>{
-let r=new FileReader();
-r.onload=x=>{
-data=JSON.parse(x.target.result);
-save(); home();
-};
-r.readAsText(e.target.files[0]);
-};
-i.click();
+  let input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+
+  input.onchange = e => {
+    let file = e.target.files[0];
+    if(!file) return;
+
+    let r = new FileReader();
+    r.onload = x => {
+      try{
+        data = JSON.parse(x.target.result);
+        save();
+        home();
+      } catch(err){
+        alert('Ошибка файла');
+        console.error(err);
+      }
+    };
+    r.readAsText(file);
+  };
+
+  input.click();
 }
 
 // ===== START =====
 home();
-
 </script>
 </body>
 </html>
