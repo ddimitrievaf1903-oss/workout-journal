@@ -1,64 +1,4 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workout</title>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-<style>
-body{font-family:-apple-system;background:#f2f2f7;margin:0}
-.container{max-width:420px;margin:auto;padding:16px}
-
-.card{
-background:#fff;
-border-radius:16px;
-padding:12px;
-margin-bottom:12px;
-box-shadow:0 4px 10px rgba(0,0,0,.05);
-}
-
-.row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
-.green{background:#34c759}
-.yellow{background:#ffcc00;color:#000}
-.red{background:#ff3b30}
-
-input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
-
-.modal{
-position:fixed;
-inset:0;
-background:rgba(0,0,0,.3);
-display:flex;
-align-items:center;
-justify-content:center;
-}
-
-.modalBox{
-background:#fff;
-padding:16px;
-border-radius:16px;
-width:90%;
-max-width:360px;
-}
-
-.setRow{
-display:flex;
-justify-content:space-between;
-margin-top:4px;
-}
-
-.up{color:#34c759}
-.down{color:#ff3b30}
-</style>
-</head>
-
-<body>
-<div class="container" id="app"></div>
-
+<!-- ТОЛЬКО SCRIPT, твой HTML и CSS оставь -->
 <script>
 
 // ===== FIREBASE =====
@@ -83,7 +23,6 @@ db.collection("users").doc("main").set({workouts:data});
 db.collection("users").doc("main").onSnapshot(doc=>{
 if(!doc.exists)return;
 let cloud=doc.data().workouts||[];
-
 if(JSON.stringify(cloud)!==JSON.stringify(data)){
 data=cloud;
 localStorage.setItem('workouts',JSON.stringify(data));
@@ -98,7 +37,7 @@ app.innerHTML=`
 <div id="list"></div>
 
 <div class="row">
-<input id="nw" placeholder="Название">
+<input id="nw">
 <button onclick="addW()">+</button>
 </div>
 `;
@@ -106,8 +45,9 @@ app.innerHTML=`
 let list=document.getElementById('list');
 
 data.forEach((w,i)=>{
+
 let d=document.createElement('div');
-d.className='card';
+d.className='card '+(w.done?'done':'');
 d.draggable=true;
 
 d.ondragstart=()=>dragW=i;
@@ -121,8 +61,12 @@ save();home();
 
 d.innerHTML=`
 <b>${w.name}</b>
+
 <div class="row">
 <button onclick="openW(${i})">Открыть</button>
+<button onclick="editW(${i})">✏️</button>
+<button class="green" onclick="done(${i})">✔</button>
+<button class="red" onclick="undone(${i})">✖</button>
 <button class="red" onclick="delW(${i})">🗑</button>
 </div>
 `;
@@ -143,7 +87,7 @@ app.innerHTML=`
 <div class="row">
 <button onclick="addE(${wi})">Добавить</button>
 <button onclick="addE(${wi},'special')">Особое</button>
-<button class="green" onclick="addE(${wi},'extra')">Доп</button>
+<button onclick="addE(${wi},'extra')">Доп</button>
 </div>
 `;
 
@@ -151,8 +95,13 @@ let list=document.getElementById('list');
 
 w.exercises.forEach((e,ei)=>{
 
+let bg='';
+if(e.special) bg='background:#d0e7ff';
+if(e.extra) bg='background:#d4f8d4';
+
 let max=Math.max(e.sets?.length||0,e.newSets?.length||0);
-let html='';
+
+let setsHTML='';
 
 for(let i=0;i<max;i++){
 let oldS=e.sets?.[i]||'';
@@ -162,11 +111,11 @@ let diff='';
 if(oldS&&newS){
 let ow=parseFloat(oldS);
 let nw=parseFloat(newS);
-if(nw>ow) diff='<span class="up">↑</span>';
-if(nw<ow) diff='<span class="down">↓</span>';
+if(nw>ow) diff='↑';
+if(nw<ow) diff='↓';
 }
 
-html+=`
+setsHTML+=`
 <div class="setRow">
 <span>${oldS?`Подход ${i+1}: ${oldS}`:''}</span>
 <span>${newS||''} ${diff}</span>
@@ -174,8 +123,11 @@ html+=`
 `;
 }
 
+let infoColor=e.info?'yellow':'gray';
+
 let d=document.createElement('div');
 d.className='card';
+d.style=bg;
 d.draggable=true;
 
 d.ondragstart=()=>dragE=ei;
@@ -190,116 +142,139 @@ save();openW(wi);
 d.innerHTML=`
 <b>${e.name}</b>
 
-${html}
+<div class="infoBtn ${infoColor}" onclick="toggleInfo(${wi},${ei})">!</div>
+
+<button onclick="editE(${wi},${ei})">✏️</button>
+<button class="red" onclick="delE(${wi},${ei})">🗑</button>
+
+${e.img?`<img src="${e.img}" class="exercise-img">`:''}
+
+${setsHTML}
 
 <div class="row">
 <button onclick="openSets(${wi},${ei})">Подходы</button>
-<button class="yellow" onclick="openNew(${wi},${ei})">Новый результат</button>
-${e.newSets?.length?`<button class="green" onclick="saveRes(${wi},${ei})">Сохранить</button>`:''}
+<button onclick="openNew(${wi},${ei})">Новый</button>
+${e.newSets?.length?`<button onclick="saveRes(${wi},${ei})">Сохранить</button>`:''}
 </div>
+
+${e.showInfo?`
+<div contenteditable="true" id="info${ei}">${e.info||''}</div>
+<button onclick="saveInfo(${wi},${ei})">Сохранить</button>
+`:''}
 `;
 
 list.appendChild(d);
 });
 }
 
-// ===== SETS MODAL =====
+// ===== EDIT =====
+function editW(i){
+let n=prompt('Название',data[i].name);
+if(!n)return;
+data[i].name=n;
+save();home();
+}
+
+function editE(wi,ei){
+let e=data[wi].exercises[ei];
+let n=prompt('Название',e.name);
+let img=prompt('Фото',e.img||'');
+if(!n)return;
+e.name=n;
+e.img=img||'';
+save();openW(wi);
+}
+
+// ===== STATUS =====
+function done(i){data[i].done=true;save();home();}
+function undone(i){delete data[i].done;save();home();}
+
+// ===== DELETE =====
+function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
+function delE(wi,ei){if(confirm('Удалить?')){data[wi].exercises.splice(ei,1);save();openW(wi);}}
+
+// ===== ADD =====
+function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
+function addE(wi,type){
+data[wi].exercises.push({name:'Упражнение',sets:[],special:type==='special',extra:type==='extra'});
+save();openW(wi);
+}
+
+// ===== INFO =====
+function toggleInfo(wi,ei){
+let e=data[wi].exercises[ei];
+e.showInfo=!e.showInfo;
+save();openW(wi);
+}
+function saveInfo(wi,ei){
+data[wi].exercises[ei].info=document.getElementById('info'+ei).innerHTML;
+save();
+}
+
+// ===== MODAL =====
+function modal(content,cb){
+let m=document.createElement('div');
+m.className='modal';
+m.innerHTML=`<div class="modalBox">${content}<br><button onclick="this.closest('.modal').remove()">Закрыть</button></div>`;
+document.body.appendChild(m);
+setTimeout(cb,0);
+}
+
+// ===== SETS =====
 function openSets(wi,ei){
 let ex=data[wi].exercises[ei];
 let temp=[...(ex.sets||[])];
 
-modal(`
-<h3>Подходы</h3>
-<div id="list"></div>
-
-<div class="row">
-<input id="w" placeholder="Вес">
-<input id="r" placeholder="Повторы">
-<button onclick="add()">+</button>
-</div>
-`,render);
+modal(`<h3>Подходы</h3><div id="list"></div>
+<input id="w"><input id="r"><button onclick="add()">+</button>`,render);
 
 function render(){
 let l=document.getElementById('list');
 l.innerHTML='';
-temp.forEach((s,i)=>{
-l.innerHTML+=`
-<div class="row">
-Подход ${i+1}: ${s}
-<button onclick="del(${i})">🗑</button>
-</div>
-`;
-});
+temp.forEach((s,i)=>l.innerHTML+=`Подход ${i+1}: ${s} <button onclick="del(${i})">x</button><br>`);
 }
 
 window.add=()=>{
 let w=document.getElementById('w').value;
 let r=document.getElementById('r').value;
-if(!w||!r)return;
-
 temp.push(w+'x'+r);
 ex.sets=temp;
-save();
-render();
-openW(wi);
+save();render();openW(wi);
 };
 
 window.del=i=>{
 temp.splice(i,1);
 ex.sets=temp;
-save();
-render();
-openW(wi);
+save();render();openW(wi);
 };
 }
 
-// ===== NEW RESULT MODAL (НЕ СТРАНИЦА) =====
+// ===== NEW =====
 function openNew(wi,ei){
 let ex=data[wi].exercises[ei];
 let temp=[...(ex.newSets||[])];
 
-modal(`
-<h3>Новый результат</h3>
-<div id="list"></div>
-
-<div class="row">
-<input id="w" placeholder="Вес">
-<input id="r" placeholder="Повторы">
-<button onclick="add()">+</button>
-</div>
-`,render);
+modal(`<h3>Новый результат</h3><div id="list"></div>
+<input id="w"><input id="r"><button onclick="add()">+</button>`,render);
 
 function render(){
 let l=document.getElementById('list');
 l.innerHTML='';
-temp.forEach((s,i)=>{
-l.innerHTML+=`
-<div class="row">
-Подход ${i+1}: ${s}
-<button onclick="del(${i})">🗑</button>
-</div>
-`;
-});
+temp.forEach((s,i)=>l.innerHTML+=`Подход ${i+1}: ${s} <button onclick="del(${i})">x</button><br>`);
 }
 
 window.add=()=>{
 let w=document.getElementById('w').value;
 let r=document.getElementById('r').value;
-if(!w||!r)return;
-
 temp.push(w+'x'+r);
 ex.newSets=temp.length?temp:null;
-save();
-render();
-openW(wi);
+save();render();openW(wi);
 };
 
 window.del=i=>{
 temp.splice(i,1);
 ex.newSets=temp.length?temp:null;
-save();
-render();
-openW(wi);
+save();render();openW(wi);
 };
 }
 
@@ -308,35 +283,10 @@ function saveRes(wi,ei){
 let e=data[wi].exercises[ei];
 e.sets=e.newSets;
 delete e.newSets;
-save();
-openW(wi);
-}
-
-// ===== OTHER =====
-function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
-function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
-function addE(wi,type){data[wi].exercises.push({name:'Упражнение',sets:[]});save();openW(wi);}
-
-// ===== MODAL =====
-function modal(content,cb){
-let m=document.createElement('div');
-m.className='modal';
-
-m.innerHTML=`
-<div class="modalBox">
-${content}
-<br>
-<button onclick="this.closest('.modal').remove()">Закрыть</button>
-</div>
-`;
-
-document.body.appendChild(m);
-setTimeout(cb,0);
+save();openW(wi);
 }
 
 // ===== START =====
 home();
 
 </script>
-</body>
-</html>
