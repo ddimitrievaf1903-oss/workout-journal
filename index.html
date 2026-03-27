@@ -11,13 +11,19 @@
 <style>
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,.05)}
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
+.green{background:#34c759}
+.red{background:#ff3b30}
+.yellow{background:#ffcc00;color:#000}
 .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-input{padding:8px;border-radius:8px;border:1px solid #ccc}
+input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
 .modalBox{background:#fff;padding:16px;border-radius:16px;width:90%}
 .setRow{display:flex;justify-content:space-between;margin-top:4px}
+.up{color:#34c759}
+.down{color:#ff3b30}
+.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
 </style>
 </head>
 
@@ -36,6 +42,7 @@ const db = firebase.firestore();
 
 // DATA
 let data = JSON.parse(localStorage.getItem('workouts')) || [];
+let dragW=null, dragE=null;
 
 // SAVE
 function save(){
@@ -60,8 +67,15 @@ app.innerHTML=`
 <h2>Тренировки</h2>
 <div id="list"></div>
 
+<div class="row">
 <input id="nw" placeholder="Название">
 <button onclick="addW()">+</button>
+</div>
+
+<div class="row">
+<button onclick="exportData()">Экспорт</button>
+<button onclick="importData()">Импорт</button>
+</div>
 `;
 
 let list=document.getElementById('list');
@@ -69,12 +83,22 @@ let list=document.getElementById('list');
 data.forEach((w,i)=>{
 let d=document.createElement('div');
 d.className='card';
+d.draggable=true;
+
+d.ondragstart=()=>dragW=i;
+d.ondragover=e=>e.preventDefault();
+d.ondrop=()=>{
+if(dragW===i)return;
+let m=data.splice(dragW,1)[0];
+data.splice(i,0,m);
+save();home();
+};
 
 d.innerHTML=`
 <b>${w.name}</b>
 <div class="row">
 <button onclick="openW(${i})">Открыть</button>
-<button onclick="delW(${i})">🗑</button>
+<button class="red" onclick="delW(${i})">🗑</button>
 </div>
 `;
 
@@ -91,7 +115,11 @@ app.innerHTML=`
 <h2>${w.name}</h2>
 <div id="list"></div>
 
-<button onclick="addE(${wi})">Добавить упражнение</button>
+<div class="row">
+<button onclick="addE(${wi})">Добавить</button>
+<button onclick="addE(${wi},'special')">Особое</button>
+<button class="green" onclick="addE(${wi},'extra')">Доп</button>
+</div>
 `;
 
 let list=document.getElementById('list');
@@ -105,26 +133,48 @@ for(let i=0;i<max;i++){
 let oldS=e.sets?.[i]||'';
 let newS=e.newSets?.[i]||'';
 
+let diff='';
+if(oldS&&newS){
+let ow=parseFloat(oldS);
+let nw=parseFloat(newS);
+if(nw>ow) diff='<span class="up">↑</span>';
+if(nw<ow) diff='<span class="down">↓</span>';
+}
+
 html+=`
 <div class="setRow">
 <span>${oldS?`Подход ${i+1}: ${oldS}`:''}</span>
-<span>${newS||''}</span>
+<span>${newS||''} ${diff}</span>
 </div>
 `;
 }
 
 let d=document.createElement('div');
 d.className='card';
+d.draggable=true;
+
+d.ondragstart=()=>dragE=ei;
+d.ondragover=e=>e.preventDefault();
+d.ondrop=()=>{
+if(dragE===ei)return;
+let m=w.exercises.splice(dragE,1)[0];
+w.exercises.splice(ei,0,m);
+save();openW(wi);
+};
 
 d.innerHTML=`
 <b>${e.name}</b>
+<button onclick="editE(${wi},${ei})">✏️</button>
+<button class="red" onclick="delE(${wi},${ei})">🗑</button>
+
+${e.img?`<img src="${e.img}" class="exercise-img">`:''}
 
 ${html}
 
 <div class="row">
 <button onclick="setsModal(${wi},${ei})">Подходы</button>
-<button onclick="newModal(${wi},${ei})">Новый результат</button>
-${e.newSets?.length?`<button onclick="saveRes(${wi},${ei})">Сохранить</button>`:''}
+<button class="yellow" onclick="newModal(${wi},${ei})">Новый</button>
+${e.newSets?.length?`<button class="green" onclick="saveRes(${wi},${ei})">Сохранить</button>`:''}
 </div>
 `;
 
@@ -135,9 +185,31 @@ list.appendChild(d);
 // ADD
 function addW(){let v=nw.value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
 function delW(i){if(confirm('Удалить?')){data.splice(i,1);save();home();}}
-function addE(wi){data[wi].exercises.push({name:'Упражнение',sets:[]});save();openW(wi);}
+function addE(wi,type){
+data[wi].exercises.push({name:'Упражнение',sets:[],special:type==='special',extra:type==='extra'});
+save();openW(wi);
+}
 
-// SETS MODAL
+// EDIT
+function editE(wi,ei){
+let e=data[wi].exercises[ei];
+let n=prompt('Название',e.name);
+if(!n)return;
+let img=prompt('Фото',e.img||'');
+e.name=n;
+e.img=img||'';
+save();openW(wi);
+}
+
+// DELETE
+function delE(wi,ei){
+if(confirm('Удалить упражнение?')){
+data[wi].exercises.splice(ei,1);
+save();openW(wi);
+}
+}
+
+// SETS
 function setsModal(wi,ei){
 let ex=data[wi].exercises[ei];
 let temp=[...(ex.sets||[])];
@@ -172,22 +244,17 @@ if(!w||!r)return;
 temp.push(w+'x'+r);
 ex.sets=temp;
 
-save();
-render();
-openW(wi);
+save();render();openW(wi);
 };
 
-window.del=(i)=>{
+window.del=i=>{
 temp.splice(i,1);
 ex.sets=temp;
-
-save();
-render();
-openW(wi);
+save();render();openW(wi);
 };
 }
 
-// NEW RESULT MODAL
+// NEW RESULT
 function newModal(wi,ei){
 let ex=data[wi].exercises[ei];
 let temp=[...(ex.newSets||[])];
@@ -222,18 +289,13 @@ if(!w||!r)return;
 temp.push(w+'x'+r);
 ex.newSets=temp.length?temp:null;
 
-save();
-render();
-openW(wi);
+save();render();openW(wi);
 };
 
-window.del=(i)=>{
+window.del=i=>{
 temp.splice(i,1);
 ex.newSets=temp.length?temp:null;
-
-save();
-render();
-openW(wi);
+save();render();openW(wi);
 };
 }
 
@@ -242,8 +304,7 @@ function saveRes(wi,ei){
 let e=data[wi].exercises[ei];
 e.sets=e.newSets;
 delete e.newSets;
-save();
-openW(wi);
+save();openW(wi);
 }
 
 // MODAL
@@ -261,6 +322,29 @@ ${content}
 
 document.body.appendChild(m);
 setTimeout(cb,0);
+}
+
+// EXPORT / IMPORT
+function exportData(){
+let blob=new Blob([JSON.stringify(data)],{type:"application/json"});
+let a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='workouts.json';
+a.click();
+}
+
+function importData(){
+let i=document.createElement('input');
+i.type='file';
+i.onchange=e=>{
+let r=new FileReader();
+r.onload=x=>{
+data=JSON.parse(x.target.result);
+save();home();
+};
+r.readAsText(e.target.files[0]);
+};
+i.click();
 }
 
 // START
