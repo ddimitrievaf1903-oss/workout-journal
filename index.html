@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Журнал тренировок</title>
+<style>
+body{font-family:-apple-system;background:#f2f2f7;margin:0}
+.container{max-width:420px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,.05);position:relative}
+.done{background:#e8f8ee}
+.special{background:#e6f0ff}
+.extra{background:#e8f8ee}
+.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
+button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
+.small{font-size:12px}
+.green{background:#34c759}
+.red{background:#ff3b30}
+.yellow{background:#ffcc00;color:#000}
+.row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.title{font-size:20px;font-weight:600;margin-bottom:10px}
+.setRow{display:flex;justify-content:space-between}
+.plus{color:#34c759}
+.minus{color:#ff3b30}
+
+.infoBtn{position:absolute;right:8px;top:8px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.gray{background:#ccc}
+.yellowBg{background:#ffcc00}
+
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;transition:.2s}
+.modal.show{background:rgba(0,0,0,.3)}
+.modalBox{background:#fff;padding:16px;border-radius:16px;width:90%;max-width:350px;transform:translateY(20px);opacity:0;transition:.2s}
+.modal.show .modalBox{transform:translateY(0);opacity:1}
+
+.editor{border:1px solid #ccc;border-radius:8px;padding:6px;min-height:60px}
+.toolbar{display:flex;gap:4px;margin:6px 0}
+.toolbar button{background:#e5e5ea;color:#000}
+.bigBtn{width:100%;padding:12px;font-size:16px}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+let data = JSON.parse(localStorage.getItem('workouts')) || [];
+let cw=null, ce=null, temp=[];
+let dragW=null, dragE=null;
+
+function save(){localStorage.setItem('workouts', JSON.stringify(data));}
+
+function home(){
+const app=document.getElementById('app');
+app.innerHTML=`<div class=title>Тренировки</div><div id=list></div>
+<input id=nw placeholder="Новая тренировка"><button onclick=addW()>Добавить</button>`;
+
+const list=document.getElementById('list');
+
+data.forEach((w,i)=>{
+const d=document.createElement('div');
+d.className='card '+(w.done?'done':'');
+d.draggable=true;
+
+d.ondragstart=()=>dragW=i;
+d.ondragover=e=>e.preventDefault();
+d.ondrop=()=>{
+if(dragW===null||dragW===i)return;
+const m=data.splice(dragW,1)[0];
+data.splice(i,0,m);
+dragW=null;
+save();home();
+};
+
+d.innerHTML=`<b>${w.name}</b>
+<div class=row>
+<button onclick=openW(${i})>Открыть</button>
+<button class="green small" onclick="done(${i})">✔</button>
+<button class="red small" onclick="undone(${i})">✖</button>
+</div>`;
+
+list.appendChild(d);
+});}
+
+function addW(){let v=document.getElementById('nw').value;if(!v)return;data.push({name:v,exercises:[]});save();home();}
+function done(i){data[i].done=true;save();home();}
+function undone(i){delete data[i].done;save();home();}
+
+function openW(i){
+cw=i;let w=data[i];
+const app=document.getElementById('app');
+
+app.innerHTML=`<button onclick=home()>←</button>
+<div class=title>${w.name}</div>
+<div id=list></div>
+<button class=bigBtn onclick="addE('normal')">Добавить упражнение</button>
+<div class=row>
+<button onclick="addE('special')">Особое</button>
+<button class=green onclick="addE('extra')">Доп</button>
+</div>`;
+
+const list=document.getElementById('list');
+
+w.exercises.forEach((e,i)=>{
+const d=document.createElement('div');
+d.className='card'+(e.special?' special':'')+(e.extra?' extra':'');
+
+d.draggable=true;
+d.ondragstart=()=>dragE=i;
+d.ondragover=e=>e.preventDefault();
+d.ondrop=()=>{
+if(dragE===null||dragE===i)return;
+const m=w.exercises.splice(dragE,1)[0];
+w.exercises.splice(i,0,m);
+dragE=null;
+save();openW(cw);
+};
+
+let setsHTML='';
+let max=Math.max((e.sets||[]).length,(e.newSets||[]).length);
+
+for(let j=0;j<max;j++){
+let l=e.sets?.[j]||'';
+let r=e.newSets?.[j]||'';
+let diff='';
+if(l&&r){
+let lw=parseInt(l.split('x')[0]);
+let rw=parseInt(r.split('x')[0]);
+if(rw>lw) diff='<span class=plus>▲</span>';
+if(rw<lw) diff='<span class=minus>▼</span>';
+}
+setsHTML+=`<div class=setRow><span>${l?`Подход ${j+1}: ${l}`:''}</span><span>${r} ${diff}</span></div>`;
+}
+
+let infoClass=e.info?'yellowBg':'gray';
+let infoBox=e.showInfo?`<div class=toolbar>
+<button onclick="fmt('bold')">B</button>
+<button onclick="fmt('italic')">I</button>
+</div>
+<div contenteditable class=editor id=info${i}>${e.info||''}</div>
+<button onclick=saveInfo(${i})>Сохранить</button>`:'';
+
+d.innerHTML=`<b>${e.name}</b>
+<button class=small onclick=editE(${i})>✏️</button>
+<button class="red small" onclick=delE(${i})>🗑</button>
+${e.img?`<img src="${e.img}" class=exercise-img>`:''}
+${setsHTML}
+<div class=row>
+<button onclick=openSets(${i})>Подходы</button>
+<button class=yellow onclick=newRes(${i})>Новый результат</button>
+${(e.newSets&&e.newSets.length)?`<button class=green onclick=saveRes(${i})>Сохранить</button>`:''}
+</div>
+<div class="infoBtn ${infoClass}" onclick=toggleInfo(${i})>!</div>
+${infoBox}`;
+
+list.appendChild(d);
+});}
+
+function addE(type='normal'){
+data[cw].exercises.push({name:'Новое',img:'',sets:[],special:type==='special',extra:type==='extra'});
+save();openW(cw);
+}
+
+function editE(i){
+let n=prompt('Название',data[cw].exercises[i].name);
+if(!n)return;
+let img=prompt('Фото',data[cw].exercises[i].img||'');
+data[cw].exercises[i].name=n;
+data[cw].exercises[i].img=img;
+save();openW(cw);
+}
+
+function delE(i){if(!confirm('Удалить?'))return;data[cw].exercises.splice(i,1);save();openW(cw);} 
+
+function openModal(title, render, add){
+const modal=document.createElement('div');
+modal.className='modal';
+modal.innerHTML=`<div class=modalBox>
+<b>${title}</b>
+<div id=list></div>
+<input id=w placeholder=Вес>
+<input id=r placeholder=Повторы>
+<button id=addBtn>+</button>
+<button onclick="this.closest('.modal').remove()">Закрыть</button>
+</div>`;
+
+document.body.appendChild(modal);
+requestAnimationFrame(()=>modal.classList.add('show'));
+
+modal.querySelector('#addBtn').onclick=add;
+render();
+}
+
+function openSets(i){ce=i;temp=[...(data[cw].exercises[i].sets||[])];openModal('Подходы',renderSets,addSet);} 
+function renderSets(){let list=document.querySelector('.modal #list');list.innerHTML='';temp.forEach((s,i)=>{let d=document.createElement('div');d.innerHTML=`${s} <button onclick=delSet(${i})>🗑</button>`;list.appendChild(d);});}
+function addSet(){let w=document.getElementById('w').value;let r=document.getElementById('r').value;if(!w||!r)return;temp.push(w+'x'+r);data[cw].exercises[ce].sets=[...temp];save();renderSets();openW(cw);} 
+function delSet(i){temp.splice(i,1);data[cw].exercises[ce].sets=[...temp];save();renderSets();openW(cw);} 
+
+function newRes(i){ce=i;temp=[...(data[cw].exercises[i].newSets||[])];openModal('Новый результат',renderTemp,addTemp);} 
+function renderTemp(){let list=document.querySelector('.modal #list');list.innerHTML='';temp.forEach((s,i)=>{let d=document.createElement('div');d.innerHTML=`${s} <button onclick=delTemp(${i})>🗑</button>`;list.appendChild(d);});}
+function addTemp(){let w=document.getElementById('w').value;let r=document.getElementById('r').value;if(!w||!r)return;temp.push(w+'x'+r);data[cw].exercises[ce].newSets=[...temp];save();renderTemp();openW(cw);} 
+function delTemp(i){temp.splice(i,1);if(temp.length===0){delete data[cw].exercises[ce].newSets;}else{data[cw].exercises[ce].newSets=[...temp];}save();renderTemp();openW(cw);} 
+
+function saveRes(i){data[cw].exercises[i].sets=[...data[cw].exercises[i].newSets];delete data[cw].exercises[i].newSets;save();openW(cw);} 
+
+function toggleInfo(i){data[cw].exercises[i].showInfo=!data[cw].exercises[i].showInfo;save();openW(cw);} 
+function saveInfo(i){data[cw].exercises[i].info=document.getElementById('info'+i).innerHTML;save();openW(cw);} 
+function fmt(cmd){document.execCommand(cmd);} 
+
+home();
+</script>
+</body>
+</html>
