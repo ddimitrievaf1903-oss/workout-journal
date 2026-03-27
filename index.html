@@ -5,17 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Журнал тренировок</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
 <style>
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,.05)}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px}
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
-.green{background:#34c759}
-.row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.title{font-size:20px;font-weight:600;margin-bottom:10px}
 </style>
 </head>
 
@@ -25,185 +19,40 @@ button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#f
 
 <script>
 
-// ===== FIREBASE =====
-const firebaseConfig = {
-  apiKey: "AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
-  authDomain: "workout-app-80e26.firebaseapp.com",
-  projectId: "workout-app-80e26"
-};
+let data = JSON.parse(localStorage.getItem('workouts')) || [];
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// ===== DATA =====
-let data = [];
-
-// ===== SAVE =====
 function save(){
   localStorage.setItem('workouts', JSON.stringify(data));
-
-  db.collection("users").doc("main").set({
-    workouts: data
-  });
 }
 
-// ===== LOAD =====
-function load(callback){
-  db.collection("users").doc("main").get().then(doc=>{
-    if(doc.exists){
-      data = doc.data().workouts || [];
-    } else {
-      data = JSON.parse(localStorage.getItem('workouts')) || [];
-    }
-
-    localStorage.setItem('workouts', JSON.stringify(data));
-    callback();
-  });
-}
-
-// ===== HOME =====
 function home(){
-  const app=document.getElementById('app');
-
-  app.innerHTML=`
-    <div class="title">Тренировки</div>
+  document.getElementById('app').innerHTML = `
+    <h2>Тренировки</h2>
+    <input id="nw">
+    <button onclick="add()">Добавить</button>
     <div id="list"></div>
-
-    <div class="row">
-      <input id="nw" placeholder="Новая тренировка">
-      <button onclick="addW()">Добавить</button>
-    </div>
-
-    <div class="row">
-      <button class="green" onclick="exportData()">Экспорт</button>
-      <button onclick="importData()">Импорт</button>
-    </div>
   `;
 
-  const list=document.getElementById('list');
+  const list = document.getElementById('list');
 
   data.forEach((w,i)=>{
-    const d=document.createElement('div');
+    const d = document.createElement('div');
     d.className='card';
-
-    d.innerHTML=`
-      <b>${w.name}</b>
-      <div class="row">
-        <button onclick="openW(${i})">Открыть</button>
-      </div>
-    `;
-
+    d.innerHTML = w.name;
     list.appendChild(d);
   });
 }
 
-// ===== ADD WORKOUT =====
-function addW(){
+function add(){
   const v=document.getElementById('nw').value;
   if(!v)return;
 
-  data.push({name:v,exercises:[]});
+  data.push({name:v});
   save();
   home();
 }
 
-// ===== OPEN WORKOUT =====
-function openW(i){
-  const w=data[i];
-  const app=document.getElementById('app');
-
-  app.innerHTML=`
-    <button onclick="home()">← Назад</button>
-    <div class="title">${w.name}</div>
-    <div id="list"></div>
-
-    <button onclick="addE(${i})">Добавить упражнение</button>
-  `;
-
-  const list=document.getElementById('list');
-
-  w.exercises.forEach((e,idx)=>{
-    let setsHTML='';
-    (e.sets||[]).forEach((s,j)=>{
-      setsHTML+=`<div>Подход ${j+1}: ${s}</div>`;
-    });
-
-    const d=document.createElement('div');
-    d.className='card';
-
-    d.innerHTML=`
-      <b>${e.name}</b>
-      ${setsHTML}
-      <div class="row">
-        <button onclick="addSet(${i},${idx})">Подходы</button>
-      </div>
-    `;
-
-    list.appendChild(d);
-  });
-}
-
-// ===== ADD EXERCISE =====
-function addE(wi){
-  data[wi].exercises.push({name:'Новое упражнение',sets:[]});
-  save();
-  openW(wi);
-}
-
-// ===== ADD SET =====
-function addSet(wi,ei){
-  const w=prompt('Вес');
-  const r=prompt('Повторы');
-
-  if(!w||!r)return;
-
-  data[wi].exercises[ei].sets.push(w+'x'+r);
-  save();
-  openW(wi);
-}
-
-// ===== EXPORT =====
-function exportData(){
-  const dataStr = localStorage.getItem('workouts') || '[]';
-  const blob = new Blob([dataStr], {type: "application/json"});
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'workouts.json';
-  a.click();
-}
-
-// ===== IMPORT =====
-function importData(){
-  const input = document.createElement('input');
-  input.type = 'file';
-
-  input.onchange = function(e){
-    const file = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function(event){
-      localStorage.setItem('workouts', event.target.result);
-      data = JSON.parse(event.target.result);
-      save();
-      home();
-    };
-
-    reader.readAsText(file);
-  };
-
-  input.click();
-}
-
-// ===== START =====
-function startApp(){
-  load(function(){
-    home();
-  });
-}
-
-startApp();
+home();
 
 </script>
 
