@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Журнал тренировок</title>
+<title>Workout</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -12,27 +12,26 @@
 body{font-family:-apple-system;background:#f2f2f7;margin:0}
 .container{max-width:420px;margin:auto;padding:16px}
 .card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px}
+.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px}
 button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
 .green{background:#34c759}
+.yellow{background:#ffcc00;color:#000}
 .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.title{font-size:20px;font-weight:600;margin-bottom:10px}
 </style>
 </head>
 
 <body>
-
 <div class="container" id="app"></div>
 
 <script>
 
 // ===== FIREBASE =====
-const firebaseConfig = {
-  apiKey: "AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
-  authDomain: "workout-app-80e26.firebaseapp.com",
-  projectId: "workout-app-80e26"
-};
+firebase.initializeApp({
+  apiKey:"AIzaSy...",
+  authDomain:"workout-app-80e26.firebaseapp.com",
+  projectId:"workout-app-80e26"
+});
 
-firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ===== DATA =====
@@ -41,63 +40,36 @@ let data = JSON.parse(localStorage.getItem('workouts')) || [];
 // ===== SAVE =====
 function save(){
   localStorage.setItem('workouts', JSON.stringify(data));
-
-  db.collection("users").doc("main").set({
-    workouts: data
-  }).then(()=>{
-    console.log("SYNC OK");
-  });
+  db.collection("users").doc("main").set({workouts:data});
 }
 
-// ===== LIVE SYNC =====
-function startApp(){
+// ===== SYNC =====
+db.collection("users").doc("main")
+.onSnapshot(doc=>{
+  if(!doc.exists)return;
+  const cloud = doc.data().workouts || [];
 
-  // мгновенный запуск
-  home();
-
-  // слушаем изменения из Firebase
-  db.collection("users").doc("main")
-    .onSnapshot((doc)=>{
-
-      if(!doc.exists) return;
-
-      const cloud = doc.data().workouts || [];
-
-      if(JSON.stringify(cloud)!==JSON.stringify(data)){
-        data = cloud;
-        localStorage.setItem('workouts', JSON.stringify(data));
-        home();
-      }
-
-    });
-
-}
+  if(JSON.stringify(cloud)!==JSON.stringify(data)){
+    data = cloud;
+    localStorage.setItem('workouts', JSON.stringify(data));
+    home();
+  }
+});
 
 // ===== HOME =====
 function home(){
-const app=document.getElementById('app');
+let html = `<h2>Тренировки</h2><div id="list"></div>
+<input id="nw"><button onclick="addW()">+</button>`;
 
-app.innerHTML=`
-<div class="title">Тренировки</div>
-<div id="list"></div>
+document.getElementById('app').innerHTML = html;
 
-<input id="nw" placeholder="Новая тренировка">
-<button onclick="addW()">Добавить</button>
-`;
-
-const list=document.getElementById('list');
+let list = document.getElementById('list');
 
 data.forEach((w,i)=>{
-const d=document.createElement('div');
+let d=document.createElement('div');
 d.className='card';
-
-d.innerHTML=`
-<b>${w.name}</b>
-<div class="row">
-<button onclick="openW(${i})">Открыть</button>
-</div>
-`;
-
+d.innerHTML=`<b>${w.name}</b><br>
+<button onclick="openW(${i})">Открыть</button>`;
 list.appendChild(d);
 });
 }
@@ -106,45 +78,51 @@ list.appendChild(d);
 function addW(){
 let v=document.getElementById('nw').value;
 if(!v)return;
-
 data.push({name:v,exercises:[]});
-save();
-home();
+save(); home();
 }
 
 // ===== OPEN WORKOUT =====
 function openW(i){
 let w=data[i];
 
-const app=document.getElementById('app');
-
-app.innerHTML=`
-<button onclick="home()">← Назад</button>
-<div class="title">${w.name}</div>
+let html=`<button onclick="home()">←</button><h2>${w.name}</h2>
 <div id="list"></div>
 
-<button onclick="addE(${i})">Добавить упражнение</button>
-`;
+<button onclick="addE(${i},'normal')">Добавить</button>
+<button onclick="addE(${i},'special')">Особое</button>
+<button onclick="addE(${i},'extra')">Доп</button>`;
 
-const list=document.getElementById('list');
+document.getElementById('app').innerHTML=html;
 
-w.exercises.forEach((e,idx)=>{
+let list=document.getElementById('list');
 
-let setsHTML='';
+w.exercises.forEach((e,ei)=>{
+
+let sets='';
 (e.sets||[]).forEach((s,j)=>{
-setsHTML+=`<div>Подход ${j+1}: ${s}</div>`;
+sets+=`<div>${s}</div>`;
 });
 
-const d=document.createElement('div');
+let newSets='';
+(e.newSets||[]).forEach((s,j)=>{
+newSets+=`<div>${s}</div>`;
+});
+
+let d=document.createElement('div');
 d.className='card';
 
 d.innerHTML=`
 <b>${e.name}</b>
-${setsHTML}
+${e.img?`<img src="${e.img}" class="exercise-img">`:''}
+
+${sets}
+${newSets}
 
 <div class="row">
-<button onclick="addSet(${i},${idx})">Подходы</button>
-<button onclick="newRes(${i},${idx})">Новый результат</button>
+<button onclick="addSet(${i},${ei})">Подходы</button>
+<button class="yellow" onclick="newRes(${i},${ei})">Новый результат</button>
+${e.newSets?`<button class="green" onclick="saveRes(${i},${ei})">Сохранить</button>`:''}
 </div>
 `;
 
@@ -153,40 +131,53 @@ list.appendChild(d);
 }
 
 // ===== ADD EXERCISE =====
-function addE(wi){
-data[wi].exercises.push({name:'Новое упражнение',sets:[]});
-save();
-openW(wi);
+function addE(wi,type){
+data[wi].exercises.push({
+name:'Упражнение',
+img:'',
+sets:[],
+special:type=='special',
+extra:type=='extra'
+});
+save(); openW(wi);
 }
 
 // ===== ADD SET =====
 function addSet(wi,ei){
 let w=prompt('Вес');
 let r=prompt('Повторы');
-
 if(!w||!r)return;
 
 data[wi].exercises[ei].sets.push(w+'x'+r);
-save();
-openW(wi);
+save(); openW(wi);
 }
 
 // ===== NEW RESULT =====
 function newRes(wi,ei){
 let w=prompt('Вес');
 let r=prompt('Повторы');
-
 if(!w||!r)return;
 
-data[wi].exercises[ei].sets.push(w+'x'+r);
-save();
-openW(wi);
+if(!data[wi].exercises[ei].newSets)
+data[wi].exercises[ei].newSets=[];
+
+data[wi].exercises[ei].newSets.push(w+'x'+r);
+
+save(); openW(wi);
+}
+
+// ===== SAVE RESULT =====
+function saveRes(wi,ei){
+let ex=data[wi].exercises[ei];
+ex.sets = ex.newSets;
+delete ex.newSets;
+
+save(); openW(wi);
 }
 
 // ===== START =====
-startApp();
+home();
 
 </script>
-
 </body>
 </html>
