@@ -1,743 +1,282 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Журнал тренировок</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Журнал тренировок</title>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f2f2f7;
-      margin: 0;
-      color: #111;
-    }
+<style>
+body{font-family:-apple-system;background:#f2f2f7;margin:0}
+.container{max-width:420px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:16px;padding:12px;margin-bottom:12px;position:relative}
+.done{background:#e8f8ee}
+.special{background:#e6f0ff}
+.extra{background:#e8f8ee}
 
-    .container {
-      max-width: 420px;
-      margin: auto;
-      padding: 16px;
-    }
+button{padding:6px 8px;border:none;border-radius:8px;background:#007aff;color:#fff}
+.green{background:#34c759}
+.red{background:#ff3b30}
+.yellow{background:#ffcc00;color:#000}
+.gray{background:#ccc;color:#000}
 
-    .card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      position: relative;
-      transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
-    }
+.row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 
-    .card.dragging {
-      opacity: 0.65;
-      transform: scale(1.02);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-    }
+.exercise-img{width:100%;height:150px;object-fit:cover;border-radius:12px;margin-top:8px}
 
-    .done {
-      background: #e8f8ee;
-    }
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
+.modalBox{background:#fff;padding:16px;border-radius:16px;width:90%}
 
-    .special {
-      background: #e6f0ff;
-    }
+.setRow{display:flex;justify-content:space-between}
 
-    .extra {
-      background: #e8f8ee;
-    }
+.infoBtn{
+position:absolute;
+right:8px;
+top:8px;
+width:24px;height:24px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+}
 
-    .exercise-img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-      border-radius: 12px;
-      margin-top: 8px;
-      display: block;
-    }
-
-    button {
-      padding: 6px 8px;
-      border: none;
-      border-radius: 8px;
-      background: #007aff;
-      color: #fff;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
-    .small {
-      font-size: 12px;
-      padding: 4px 6px;
-    }
-
-    .green {
-      background: #34c759;
-    }
-
-    .red {
-      background: #ff3b30;
-    }
-
-    .yellow {
-      background: #ffcc00;
-      color: #000;
-    }
-
-    .secondary {
-      background: #e5e5ea;
-      color: #000;
-    }
-
-    .bigBtn {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-    }
-
-    .row {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .title {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-
-    .setRow {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 4px;
-      font-size: 14px;
-    }
-
-    .plus {
-      color: #34c759;
-      font-weight: 700;
-    }
-
-    .minus {
-      color: #ff3b30;
-      font-weight: 700;
-    }
-
-    .infoBtn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .gray {
-      background: #d1d1d6;
-      color: #000;
-    }
-
-    .yellowBg {
-      background: #ffcc00;
-      color: #000;
-    }
-
-    .editor {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 8px;
-      min-height: 80px;
-      background: #fff;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 4px;
-      margin: 8px 0;
-      flex-wrap: wrap;
-    }
-
-    .toolbar button,
-    .toolbar select {
-      background: #e5e5ea;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      padding: 6px 8px;
-      font-size: 13px;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s ease;
-      z-index: 999;
-      padding: 16px;
-    }
-
-    .modal.show {
-      background: rgba(0,0,0,0.3);
-    }
-
-    .modalBox {
-      background: #fff;
-      padding: 16px;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 360px;
-      transform: translateY(20px);
-      opacity: 0;
-      transition: transform 0.2s ease, opacity 0.2s ease;
-      max-height: 80vh;
-      overflow: auto;
-    }
-
-    .modal.show .modalBox {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    input {
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-
-    .modalListItem {
-      background: #f8f8fa;
-      border-radius: 10px;
-      padding: 8px 10px;
-      margin-top: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-  </style>
+input{padding:8px;border-radius:8px;border:1px solid #ccc;width:100%}
+</style>
 </head>
+
 <body>
-  <div class="container" id="app"></div>
+<div class="container" id="app"></div>
 
-  <script>
-    // ===== FIREBASE =====
-    firebase.initializeApp({
-      apiKey: "AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
-      authDomain: "workout-app-80e26.firebaseapp.com",
-      projectId: "workout-app-80e26"
-    });
-    const db = firebase.firestore();
+<script>
 
-    // ===== DATA =====
-    let data = JSON.parse(localStorage.getItem('workouts')) || [];
-    let cw = null; // current workout
-    let ce = null; // current exercise
-    let temp = [];
-    let dragW = null;
-    let dragE = null;
-    let suppressNextSnapshot = false;
+// ===== FIREBASE =====
+firebase.initializeApp({
+  apiKey: "AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
+  authDomain: "workout-app-80e26.firebaseapp.com",
+  projectId: "workout-app-80e26"
+});
+const db = firebase.firestore();
 
-    // ===== SAVE =====
-    function saveLocal() {
+// ===== DATA =====
+let data = JSON.parse(localStorage.getItem('workouts')) || [];
+
+let cw = null;
+let ce = null;
+let temp = [];
+
+let dragIndex = null;
+let touchIndex = null;
+
+// ===== SAVE =====
+function save(){
+  localStorage.setItem('workouts', JSON.stringify(data));
+  db.collection("users").doc("main").set({workouts:data});
+}
+
+// ===== SYNC =====
+db.collection("users").doc("main").onSnapshot(doc=>{
+  if(!doc.exists)return;
+  let cloud = doc.data().workouts || [];
+  if(JSON.stringify(cloud)!==JSON.stringify(data)){
+    data = cloud;
+    home();
+  }
+});
+
+// ===== DRAG =====
+function attachDrag(el,index,arr,render){
+
+  // ПК
+  el.draggable = true;
+
+  el.ondragstart = ()=>dragIndex=index;
+
+  el.ondragover = e=>e.preventDefault();
+
+  el.ondrop = ()=>{
+    if(dragIndex===index)return;
+    let moved = arr.splice(dragIndex,1)[0];
+    arr.splice(index,0,moved);
+    save();
+    render();
+  };
+
+  // 📱 ТЕЛЕФОН
+  el.ontouchstart = ()=>touchIndex=index;
+
+  el.ontouchmove = e=>{
+    let t = e.touches[0];
+    let elOver = document.elementFromPoint(t.clientX,t.clientY)?.closest('.card');
+    if(!elOver)return;
+
+    let list = [...el.parentNode.children];
+    let overIndex = list.indexOf(elOver);
+
+    if(overIndex!==touchIndex && overIndex!==-1){
+      let moved = arr.splice(touchIndex,1)[0];
+      arr.splice(overIndex,0,moved);
+      touchIndex = overIndex;
       localStorage.setItem('workouts', JSON.stringify(data));
-    }
-
-    function saveCloud() {
-      suppressNextSnapshot = true;
-      return db.collection("users").doc("main").set({
-        workouts: data,
-        updatedAt: Date.now()
-      }).catch((err) => {
-        console.error("Firebase save error:", err);
-      });
-    }
-
-    function save() {
-      saveLocal();
-      saveCloud();
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text ?? '';
-      return div.innerHTML;
-    }
-
-    function fmt(cmd, value = null) {
-      document.execCommand(cmd, false, value);
-    }
-
-    function home() {
-      const app = document.getElementById('app');
-
-      app.innerHTML = `
-        <div class="title">Тренировки</div>
-        <div id="list"></div>
-
-        <div class="row">
-          <input id="nw" placeholder="Новая тренировка" style="flex:1" />
-          <button onclick="addW()">Добавить</button>
-        </div>
-
-        <div class="row">
-          <button class="green" onclick="exportData()">Экспорт</button>
-          <button class="secondary" onclick="importData()">Импорт</button>
-        </div>
-      `;
-
-      const list = document.getElementById('list');
-
-      data.forEach((w, i) => {
-        const d = document.createElement('div');
-        d.className = 'card ' + (w.done ? 'done' : '');
-        d.draggable = true;
-
-        d.ondragstart = () => {
-          dragW = i;
-          d.classList.add('dragging');
-        };
-
-        d.ondragend = () => {
-          d.classList.remove('dragging');
-        };
-
-        d.ondragover = (e) => e.preventDefault();
-
-        d.ondrop = () => {
-          if (dragW === null || dragW === i) return;
-          const moved = data.splice(dragW, 1)[0];
-          data.splice(i, 0, moved);
-          dragW = null;
-          save();
-          home();
-        };
-
-        d.innerHTML = `
-          <b>${escapeHtml(w.name)}</b>
-          <div class="row">
-            <button onclick="openW(${i})">Открыть</button>
-            <button class="green small" onclick="done(${i})">✔</button>
-            <button class="red small" onclick="undone(${i})">✖</button>
-          </div>
-        `;
-
-        list.appendChild(d);
-      });
-    }
-
-    function addW() {
-      const input = document.getElementById('nw');
-      const v = input.value.trim();
-      if (!v) return;
-
-      data.push({
-        name: v,
-        exercises: []
-      });
-
-      input.value = '';
-      save();
-      home();
-    }
-
-    function done(i) {
-      data[i].done = true;
-      save();
-      home();
-    }
-
-    function undone(i) {
-      delete data[i].done;
-      save();
-      home();
-    }
-
-    function openW(i) {
-      cw = i;
-      const w = data[i];
-      const app = document.getElementById('app');
-
-      app.innerHTML = `
-        <button class="secondary" onclick="home()">← Назад</button>
-        <div class="title">${escapeHtml(w.name)}</div>
-        <div id="list"></div>
-
-        <button class="bigBtn" onclick="addE('normal')">Добавить упражнение</button>
-
-        <div class="row">
-          <button onclick="addE('special')">Особое</button>
-          <button class="green" onclick="addE('extra')">Доп</button>
-        </div>
-      `;
-
-      const list = document.getElementById('list');
-
-      w.exercises.forEach((e, i) => {
-        const d = document.createElement('div');
-        d.className =
-          'card' +
-          (e.special ? ' special' : '') +
-          (e.extra ? ' extra' : '');
-
-        d.draggable = true;
-
-        d.ondragstart = () => {
-          dragE = i;
-          d.classList.add('dragging');
-        };
-
-        d.ondragend = () => {
-          d.classList.remove('dragging');
-        };
-
-        d.ondragover = (ev) => ev.preventDefault();
-
-        d.ondrop = () => {
-          if (dragE === null || dragE === i) return;
-          const moved = w.exercises.splice(dragE, 1)[0];
-          w.exercises.splice(i, 0, moved);
-          dragE = null;
-          save();
-          openW(cw);
-        };
-
-        let setsHTML = '';
-        const max = Math.max((e.sets || []).length, (e.newSets || []).length);
-
-        for (let j = 0; j < max; j++) {
-          const l = e.sets?.[j] || '';
-          const r = e.newSets?.[j] || '';
-          let diff = '';
-
-          if (l && r) {
-            const lw = parseFloat(String(l).split('x')[0]) || 0;
-            const rw = parseFloat(String(r).split('x')[0]) || 0;
-
-            if (rw > lw) diff = '<span class="plus">▲</span>';
-            if (rw < lw) diff = '<span class="minus">▼</span>';
-          }
-
-          setsHTML += `
-            <div class="setRow">
-              <span>${l ? `Подход ${j + 1}: ${escapeHtml(l)}` : ''}</span>
-              <span>${escapeHtml(r)} ${diff}</span>
-            </div>
-          `;
-        }
-
-        const infoClass = e.info ? 'yellowBg' : 'gray';
-
-        const infoBox = e.showInfo
-          ? `
-            <div class="toolbar">
-              <button onclick="fmt('bold')">B</button>
-              <button onclick="fmt('italic')">I</button>
-              <button onclick="fmt('underline')">U</button>
-              <select onchange="fmt('fontName', this.value)">
-                <option value="">Шрифт</option>
-                <option value="Arial">Arial</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Courier New">Courier</option>
-                <option value="Verdana">Verdana</option>
-              </select>
-              <select onchange="fmt('fontSize', this.value)">
-                <option value="">Размер</option>
-                <option value="2">Мал.</option>
-                <option value="3">Сред.</option>
-                <option value="5">Круп.</option>
-              </select>
-            </div>
-            <div contenteditable="true" class="editor" id="info${i}">${e.info || ''}</div>
-            <div class="row">
-              <button onclick="saveInfo(${i})">Сохранить</button>
-            </div>
-          `
-          : '';
-
-        d.innerHTML = `
-          <b>${escapeHtml(e.name)}</b>
-          <button class="small" onclick="editE(${i})">✏️</button>
-          <button class="red small" onclick="delE(${i})">🗑</button>
-
-          ${e.img ? `<img src="${escapeHtml(e.img)}" class="exercise-img">` : ''}
-
-          ${setsHTML}
-
-          <div class="row">
-            <button onclick="openSets(${i})">Подходы</button>
-            <button class="yellow" onclick="newRes(${i})">Новый результат</button>
-            ${(e.newSets && e.newSets.length)
-              ? `<button class="green" onclick="saveRes(${i})">Сохранить</button>`
-              : ''}
-          </div>
-
-          <div class="infoBtn ${infoClass}" onclick="toggleInfo(${i})">!</div>
-          ${infoBox}
-        `;
-
-        list.appendChild(d);
-      });
-    }
-
-    function addE(type = 'normal') {
-      data[cw].exercises.push({
-        name: 'Новое упражнение',
-        img: '',
-        sets: [],
-        special: type === 'special',
-        extra: type === 'extra'
-      });
-
-      save();
-      openW(cw);
-    }
-
-    function editE(i) {
-      const ex = data[cw].exercises[i];
-
-      const n = prompt('Название', ex.name);
-      if (!n) return;
-
-      const img = prompt('Фото', ex.img || '');
-
-      ex.name = n;
-      ex.img = img || '';
-
-      save();
-      openW(cw);
-    }
-
-    function delE(i) {
-      if (!confirm('Удалить упражнение?')) return;
-      data[cw].exercises.splice(i, 1);
-      save();
-      openW(cw);
-    }
-
-    function openModal(title, render, add) {
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-
-      modal.innerHTML = `
-        <div class="modalBox">
-          <b>${escapeHtml(title)}</b>
-          <div id="list"></div>
-
-          <div class="row">
-            <input id="w" placeholder="Вес" style="flex:1" />
-            <input id="r" placeholder="Повторы" style="flex:1" />
-            <button id="addBtn">+</button>
-          </div>
-
-          <div class="row">
-            <button class="secondary" onclick="closeModal(this)">Закрыть</button>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(modal);
-
-      requestAnimationFrame(() => {
-        modal.classList.add('show');
-      });
-
-      modal.querySelector('#addBtn').onclick = add;
       render();
     }
+  };
 
-    function closeModal(btn) {
-      const modal = btn.closest('.modal');
-      if (!modal) return;
-      modal.classList.remove('show');
-      setTimeout(() => modal.remove(), 180);
+  el.ontouchend = ()=>{
+    touchIndex=null;
+    save();
+  };
+}
+
+// ===== HOME =====
+function home(){
+  app.innerHTML=`
+  <h2>Тренировки</h2>
+  <div id="list"></div>
+
+  <input id="nw" placeholder="Новая тренировка">
+  <button onclick="addW()">Добавить</button>
+  `;
+
+  let list=document.getElementById('list');
+
+  data.forEach((w,i)=>{
+    let d=document.createElement('div');
+    d.className='card '+(w.done?'done':'');
+
+    attachDrag(d,i,data,home);
+
+    d.innerHTML=`
+    <b>${w.name}</b>
+
+    <div class="row">
+      <button onclick="openW(${i})">Открыть</button>
+      <button class="green" onclick="done(${i})">✔</button>
+      <button class="red" onclick="undone(${i})">✖</button>
+    </div>
+    `;
+
+    list.appendChild(d);
+  });
+}
+
+// ===== WORKOUT =====
+function openW(i){
+  cw=i;
+  let w=data[i];
+
+  app.innerHTML=`
+  <button onclick="home()">← Назад</button>
+  <h2>${w.name}</h2>
+  <div id="list"></div>
+
+  <button onclick="addE()">Добавить</button>
+  <button onclick="addE('special')">Особое</button>
+  <button onclick="addE('extra')">Доп</button>
+  `;
+
+  let list=document.getElementById('list');
+
+  w.exercises.forEach((e,ei)=>{
+    let d=document.createElement('div');
+
+    d.className='card '+
+    (e.special?'special':'')+
+    (e.extra?'extra':'');
+
+    attachDrag(d,ei,w.exercises,()=>openW(cw));
+
+    let setsHTML='';
+    let max=Math.max(e.sets?.length||0,e.newSets?.length||0);
+
+    for(let j=0;j<max;j++){
+      let l=e.sets?.[j]||'';
+      let r=e.newSets?.[j]||'';
+
+      setsHTML+=`
+      <div class="setRow">
+        <span>${l}</span>
+        <span>${r}</span>
+      </div>`;
     }
 
-    function openSets(i) {
-      ce = i;
-      temp = [...(data[cw].exercises[i].sets || [])];
-      openModal('Подходы', renderSets, addSet);
-    }
+    d.innerHTML=`
+    <b>${e.name}</b>
 
-    function renderSets() {
-      const list = document.querySelector('.modal #list');
-      if (!list) return;
+    <div class="infoBtn ${e.info?'yellow':'gray'}" onclick="openInfo(${ei})">!</div>
 
-      list.innerHTML = '';
+    ${e.img?`<img src="${e.img}" class="exercise-img">`:''}
 
-      temp.forEach((s, i) => {
-        const d = document.createElement('div');
-        d.className = 'modalListItem';
-        d.innerHTML = `
-          <span>${escapeHtml(s)}</span>
-          <button onclick="delSet(${i})">🗑</button>
-        `;
-        list.appendChild(d);
-      });
-    }
+    ${setsHTML}
 
-    function addSet() {
-      const w = document.querySelector('.modal #w')?.value;
-      const r = document.querySelector('.modal #r')?.value;
-      if (!w || !r) return;
+    <div class="row">
+      <button onclick="openSets(${ei})">Подходы</button>
+      <button class="yellow" onclick="newRes(${ei})">Новый результат</button>
+      ${e.newSets?.length?`<button class="green" onclick="saveRes(${ei})">Сохранить</button>`:''}
+    </div>
+    `;
 
-      temp.push(w + 'x' + r);
-      data[cw].exercises[ce].sets = [...temp];
-      save();
+    list.appendChild(d);
+  });
+}
 
-      renderSets();
-      openW(cw);
-    }
+// ===== BASIC =====
+function addW(){
+  let v=nw.value;
+  if(!v)return;
+  data.push({name:v,exercises:[]});
+  save(); home();
+}
 
-    function delSet(i) {
-      temp.splice(i, 1);
-      data[cw].exercises[ce].sets = [...temp];
-      save();
+function done(i){data[i].done=true;save();home();}
+function undone(i){delete data[i].done;save();home();}
 
-      renderSets();
-      openW(cw);
-    }
+function addE(type){
+  data[cw].exercises.push({
+    name:'Упражнение',
+    sets:[],
+    special:type==='special',
+    extra:type==='extra'
+  });
+  save(); openW(cw);
+}
 
-    function newRes(i) {
-      ce = i;
-      temp = [...(data[cw].exercises[i].newSets || [])];
-      openModal('Новый результат', renderTemp, addTemp);
-    }
+// ===== MODAL =====
+function modal(content){
+  let m=document.createElement('div');
+  m.className='modal';
+  m.innerHTML=`<div class="modalBox">${content}<br><button onclick="this.closest('.modal').remove()">Закрыть</button></div>`;
+  document.body.appendChild(m);
+}
 
-    function renderTemp() {
-      const list = document.querySelector('.modal #list');
-      if (!list) return;
+// ===== INFO =====
+function openInfo(i){
+  modal(`<div contenteditable="true" id="info">${data[cw].exercises[i].info||''}</div>
+  <button onclick="saveInfo(${i})">Сохранить</button>`);
+}
 
-      list.innerHTML = '';
+function saveInfo(i){
+  data[cw].exercises[i].info=document.getElementById('info').innerHTML;
+  save();
+}
 
-      temp.forEach((s, i) => {
-        const d = document.createElement('div');
-        d.className = 'modalListItem';
-        d.innerHTML = `
-          <span>${escapeHtml(s)}</span>
-          <button onclick="delTemp(${i})">🗑</button>
-        `;
-        list.appendChild(d);
-      });
-    }
+// ===== SETS / NEW =====
+function openSets(i){ modal("Подходы"); }
+function newRes(i){ modal("Новый результат"); }
 
-    function addTemp() {
-      const w = document.querySelector('.modal #w')?.value;
-      const r = document.querySelector('.modal #r')?.value;
-      if (!w || !r) return;
+// ===== SAVE RESULT =====
+function saveRes(i){
+  let e=data[cw].exercises[i];
+  e.sets=e.newSets;
+  delete e.newSets;
+  save(); openW(cw);
+}
 
-      temp.push(w + 'x' + r);
-      data[cw].exercises[ce].newSets = [...temp];
-      save();
+// ===== START =====
+home();
 
-      renderTemp();
-      openW(cw);
-    }
-
-    function delTemp(i) {
-      temp.splice(i, 1);
-
-      if (temp.length === 0) {
-        delete data[cw].exercises[ce].newSets;
-      } else {
-        data[cw].exercises[ce].newSets = [...temp];
-      }
-
-      save();
-      renderTemp();
-      openW(cw);
-    }
-
-    function saveRes(i) {
-      const ex = data[cw].exercises[i];
-      if (!ex.newSets || !ex.newSets.length) return;
-
-      ex.sets = [...ex.newSets];
-      delete ex.newSets;
-
-      save();
-      openW(cw);
-    }
-
-    function toggleInfo(i) {
-      data[cw].exercises[i].showInfo = !data[cw].exercises[i].showInfo;
-      save();
-      openW(cw);
-    }
-
-    function saveInfo(i) {
-      const editor = document.getElementById('info' + i);
-      if (!editor) return;
-
-      data[cw].exercises[i].info = editor.innerHTML;
-      save();
-      openW(cw);
-    }
-
-    function exportData() {
-      const dataStr = localStorage.getItem('workouts') || '[]';
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'workouts.json';
-      a.click();
-
-      URL.revokeObjectURL(url);
-    }
-
-    function importData() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'application/json';
-
-      input.onchange = function (e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          try {
-            const content = event.target.result;
-            JSON.parse(content);
-            data = JSON.parse(content);
-            save();
-            home();
-          } catch (err) {
-            alert('Ошибка файла');
-          }
-        };
-
-        reader.readAsText(file);
-      };
-
-      input.click();
-    }
-
-    // ===== START =====
-    home();
-  </script>
+</script>
 </body>
 </html>
