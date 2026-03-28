@@ -265,19 +265,19 @@
     }
 
     function saveCloud() {
-      suppressNextSnapshot = true;
-      return db.collection("users").doc("main").set({
-        workouts: data,
-        updatedAt: Date.now()
-      }).catch((err) => {
-        console.error("Firebase save error:", err);
-      });
-    }
-
+  suppressNextSnapshot = true;
+  return db.collection("users").doc("main").set({
+    workouts: data,
+    updatedAt: Date.now()
+  }).catch((err) => {
+    suppressNextSnapshot = false;
+    console.error("Firebase save error:", err);
+  });
+}
     function save() {
-      saveLocal();
-      saveCloud();
-    }
+  saveLocal();
+  return saveCloud();
+}
 
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -735,7 +735,28 @@
 
       input.click();
     }
+db.collection("users").doc("main").onSnapshot(doc => {
+  if (!doc.exists) return;
 
+  const cloud = doc.data().workouts || [];
+
+  // обновляем данные
+  data = cloud;
+
+  // сохраняем локально
+  localStorage.setItem('workouts', JSON.stringify(data));
+
+  // обновляем экран
+  if (typeof cw === "number" && data[cw]) {
+    openW(cw);
+  } else {
+    cw = null;
+    home();
+  }
+
+}, err => {
+  console.error("Firebase sync error:", err);
+});
     // ===== START =====
     home();
   </script>
