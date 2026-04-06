@@ -492,7 +492,19 @@
       renderCalendar();
     }
 
-    function renderColorPicker(selected, onClickName, extraArg = '') {
+    function renderColorPicker(selected, index = null) {
+  return `
+    <div class="colorPicker">
+      ${workoutColors.map(color => `
+        <div
+          class="colorOption ${selected === color ? 'active' : ''}"
+          style="background:${color}"
+          onclick="setWorkoutColor(${index}, '${color}')"
+        ></div>
+      `).join('')}
+    </div>
+  `;
+}
       return `
         <div class="colorPicker">
           ${workoutColors.map(color => `
@@ -599,7 +611,7 @@
           <b>${escapeHtml(w.name)}</b>
         </div>
         <div id="editWorkoutColorPicker">
-          ${renderColorPicker(w.color || '#8e8e93', 'setWorkoutColor', index)}
+          ${renderColorPicker(w.color || '#8e8e93', index)}
         </div>
       `);
     }
