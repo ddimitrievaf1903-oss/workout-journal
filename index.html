@@ -493,25 +493,13 @@
     }
 
     function renderColorPicker(selected, index = null) {
-  return `
-    <div class="colorPicker">
-      ${workoutColors.map(color => `
-        <div
-          class="colorOption ${selected === color ? 'active' : ''}"
-          style="background:${color}"
-          onclick="setWorkoutColor(${index}, '${color}')"
-        ></div>
-      `).join('')}
-    </div>
-  `;
-}
       return `
         <div class="colorPicker">
           ${workoutColors.map(color => `
             <div
               class="colorOption ${selected === color ? 'active' : ''}"
               style="background:${color}"
-              onclick="${onClickName}(${extraArg ? `${extraArg}, ` : ''}'${color}')"
+              onclick="setWorkoutColor(${index}, '${color}')"
             ></div>
           `).join('')}
         </div>
