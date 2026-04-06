@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Журнал тренировок</title>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
@@ -351,13 +350,39 @@
       font-size: 13px;
       margin-top: 6px;
     }
+
+    .colorPicker {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .colorOption {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    }
+
+    .colorOption.active {
+      border-color: #111;
+    }
+
+    .colorPreviewRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
   <div class="container" id="app"></div>
 
   <script>
-    // ===== FIREBASE =====
     firebase.initializeApp({
       apiKey: "AIzaSyCGrNDdXDuUxlPhI0V2g7X7C679j2Vq7_8",
       authDomain: "workout-app-80e26.firebaseapp.com",
@@ -365,11 +390,10 @@
     });
     const db = firebase.firestore();
 
-    // ===== DATA =====
     let data = JSON.parse(localStorage.getItem('workouts')) || [];
     let calendarData = JSON.parse(localStorage.getItem('calendarData')) || {};
-    let cw = null; // current workout
-    let ce = null; // current exercise
+    let cw = null;
+    let ce = null;
     let temp = [];
     let dragW = null;
     let dragE = null;
@@ -377,19 +401,19 @@
 
     let currentTab = 'workouts';
     let calendarCursor = new Date();
+    let newWorkoutColor = '#007aff';
 
     const workoutColors = [
-      { value: '#007aff', label: 'Синий' },
-      { value: '#34c759', label: 'Зелёный' },
-      { value: '#ff3b30', label: 'Красный' },
-      { value: '#ffcc00', label: 'Жёлтый' },
-      { value: '#af52de', label: 'Фиолетовый' },
-      { value: '#ff9500', label: 'Оранжевый' },
-      { value: '#5ac8fa', label: 'Голубой' },
-      { value: '#8e8e93', label: 'Серый' }
+      '#007aff',
+      '#34c759',
+      '#ff3b30',
+      '#ffcc00',
+      '#af52de',
+      '#ff9500',
+      '#5ac8fa',
+      '#8e8e93'
     ];
 
-    // ===== SAVE =====
     function saveLocal() {
       localStorage.setItem('workouts', JSON.stringify(data));
       localStorage.setItem('calendarData', JSON.stringify(calendarData));
@@ -422,7 +446,6 @@
       document.execCommand(cmd, false, value);
     }
 
-    // ===== SYNC =====
     db.collection("users").doc("main").onSnapshot(doc => {
       if (!doc.exists) return;
 
@@ -450,7 +473,6 @@
       console.error("Firebase sync error:", err);
     });
 
-    // ===== TABS =====
     function renderTabs() {
       return `
         <div class="tabs">
@@ -471,14 +493,31 @@
       renderCalendar();
     }
 
-    // ===== WORKOUTS HOME =====
+    function renderColorPicker(selected, onClickName) {
+      return `
+        <div class="colorPicker">
+          ${workoutColors.map(color => `
+            <div
+              class="colorOption ${selected === color ? 'active' : ''}"
+              style="background:${color}"
+              onclick="${onClickName}('${color}')"
+            ></div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function setNewWorkoutColor(color) {
+      newWorkoutColor = color;
+      const picker = document.getElementById('newWorkoutColorPicker');
+      if (picker) {
+        picker.innerHTML = renderColorPicker(newWorkoutColor, 'setNewWorkoutColor');
+      }
+    }
+
     function home() {
       currentTab = 'workouts';
       const app = document.getElementById('app');
-
-      const colorOptions = workoutColors.map(c => `
-        <option value="${c.value}">${c.label}</option>
-      `).join('');
 
       app.innerHTML = `
         ${renderTabs()}
@@ -487,13 +526,11 @@
 
         <div class="row">
           <input id="nw" placeholder="Новая тренировка" style="flex:1" />
+          <button onclick="addW()">Добавить</button>
         </div>
 
-        <div class="row">
-          <select id="nwColor" style="flex:1">
-            ${colorOptions}
-          </select>
-          <button onclick="addW()">Добавить</button>
+        <div id="newWorkoutColorPicker">
+          ${renderColorPicker(newWorkoutColor, 'setNewWorkoutColor')}
         </div>
 
         <div class="row">
@@ -530,12 +567,13 @@
         };
 
         d.innerHTML = `
-          <div style="display:flex;align-items:center;gap:8px">
+          <div class="colorPreviewRow">
             <div class="workoutColorDot" style="background:${w.color || '#007aff'}"></div>
             <b>${escapeHtml(w.name)}</b>
           </div>
           <div class="row">
             <button onclick="openW(${i})">Открыть</button>
+            <button class="secondary small" onclick="openWorkoutColorEditor(${i})">Цвет</button>
             <button class="green small" onclick="done(${i})">✔</button>
             <button class="red small" onclick="undone(${i})">✖</button>
           </div>
@@ -547,19 +585,51 @@
 
     function addW() {
       const input = document.getElementById('nw');
-      const colorSelect = document.getElementById('nwColor');
       const v = input.value.trim();
       if (!v) return;
 
       data.push({
+        id: 'w_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
         name: v,
-        color: colorSelect?.value || '#007aff',
+        color: newWorkoutColor,
         exercises: []
       });
 
       input.value = '';
       save();
       home();
+    }
+
+    function openWorkoutColorEditor(index) {
+      const w = data[index];
+      openCustomModal(`
+        <div class="title" style="font-size:18px;margin-bottom:8px">Цвет тренировки</div>
+        <div class="colorPreviewRow" style="margin-bottom:8px">
+          <div class="workoutColorDot" style="background:${w.color || '#007aff'}"></div>
+          <b>${escapeHtml(w.name)}</b>
+        </div>
+        <div id="editWorkoutColorPicker">
+          ${workoutColors.map(color => `
+            <div
+              class="colorOption ${w.color === color ? 'active' : ''}"
+              style="background:${color};display:inline-block;margin-right:8px;margin-bottom:8px"
+              onclick="setWorkoutColor(${index}, '${color}')"
+            ></div>
+          `).join('')}
+        </div>
+      `);
+    }
+
+    function setWorkoutColor(index, color) {
+      if (!data[index]) return;
+      data[index].color = color;
+      save();
+      openWorkoutColorEditor(index);
+      if (currentTab === 'calendar') {
+        renderCalendar();
+      } else {
+        home();
+      }
     }
 
     function done(i) {
@@ -770,23 +840,24 @@
     }
 
     function openCustomModal(html) {
-      const modal = document.createElement('div');
-      modal.className = 'modal';
+      let modal = document.querySelector('.modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modalBox"></div>`;
+        document.body.appendChild(modal);
+        requestAnimationFrame(() => {
+          modal.classList.add('show');
+        });
+      }
 
-      modal.innerHTML = `
-        <div class="modalBox">
-          ${html}
-          <div class="row">
-            <button class="secondary" onclick="closeModal(this)">Закрыть</button>
-          </div>
+      const box = modal.querySelector('.modalBox');
+      box.innerHTML = `
+        ${html}
+        <div class="row">
+          <button class="secondary" onclick="closeModal(this)">Закрыть</button>
         </div>
       `;
-
-      document.body.appendChild(modal);
-
-      requestAnimationFrame(() => {
-        modal.classList.add('show');
-      });
     }
 
     function closeModal(btn) {
@@ -956,6 +1027,7 @@
               calendarData = parsed.calendarData || {};
             }
 
+            ensureWorkoutIds();
             save();
             home();
           } catch (err) {
@@ -969,7 +1041,6 @@
       input.click();
     }
 
-    // ===== CALENDAR =====
     function formatDayKey(y, m, d) {
       const mm = String(m + 1).padStart(2, '0');
       const dd = String(d).padStart(2, '0');
@@ -1000,7 +1071,7 @@
       const last = new Date(year, month + 1, 0);
 
       let firstWeekDay = first.getDay();
-      if (firstWeekDay === 0) firstWeekDay = 7; // вс -> 7
+      if (firstWeekDay === 0) firstWeekDay = 7;
       const leadingDays = firstWeekDay - 1;
 
       const daysInMonth = last.getDate();
@@ -1014,7 +1085,6 @@
       const weekLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
       const weekHeader = weekLabels.map(d => `<div class="weekday">${d}</div>`).join('');
 
-      // prev month
       for (let i = leadingDays - 1; i >= 0; i--) {
         const day = prevMonthLast - i;
         cells += `
@@ -1025,7 +1095,6 @@
         `;
       }
 
-      // current month
       for (let day = 1; day <= daysInMonth; day++) {
         const key = formatDayKey(year, month, day);
         const entries = calendarData[key] || [];
@@ -1045,7 +1114,6 @@
         `;
       }
 
-      // tail
       const used = leadingDays + daysInMonth;
       const trailing = used % 7 === 0 ? 0 : 7 - (used % 7);
 
@@ -1077,7 +1145,7 @@
       `;
     }
 
-    function openDay(key) {
+    function renderDayModal(key) {
       const entries = calendarData[key] || [];
 
       const existingHtml = entries.length
@@ -1117,11 +1185,19 @@
       `);
     }
 
+    function openDay(key) {
+      renderDayModal(key);
+    }
+
     function ensureWorkoutIds() {
       let changed = false;
       data.forEach(w => {
         if (!w.id) {
           w.id = 'w_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+          changed = true;
+        }
+        if (!w.color) {
+          w.color = '#007aff';
           changed = true;
         }
       });
@@ -1142,12 +1218,13 @@
       });
 
       save();
-      openDay(key);
+      renderDayModal(key);
       renderCalendar();
     }
 
     function removeWorkoutFromDay(key, entryIndex) {
       if (!calendarData[key]) return;
+
       calendarData[key].splice(entryIndex, 1);
 
       if (calendarData[key].length === 0) {
@@ -1155,11 +1232,10 @@
       }
 
       save();
-      openDay(key);
+      renderDayModal(key);
       renderCalendar();
     }
 
-    // ===== START =====
     ensureWorkoutIds();
     home();
   </script>
