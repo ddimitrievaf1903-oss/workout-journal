@@ -236,6 +236,71 @@
       align-items: center;
       gap: 8px;
     }
+
+    /* ===== CALENDAR ===== */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tabs button {
+      flex: 1;
+    }
+
+    .tabs .active {
+      background: #111;
+      color: #fff;
+    }
+
+    .calendarHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .calendarTitle {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .calendarGrid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .calendarWeekday {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      padding: 6px 0;
+      font-weight: 600;
+    }
+
+    .calendarDay {
+      background: #fff;
+      border-radius: 12px;
+      min-height: 52px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      font-size: 14px;
+    }
+
+    .calendarDay.muted {
+      color: #bbb;
+      background: #f8f8fa;
+    }
+
+    .calendarDay.today {
+      outline: 2px solid #007aff;
+      background: #eef6ff;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -259,25 +324,30 @@
     let dragE = null;
     let suppressNextSnapshot = false;
 
+    // ===== NAV / CALENDAR STATE =====
+    let currentTab = 'workouts';
+    let calendarDate = new Date();
+
     // ===== SAVE =====
     function saveLocal() {
       localStorage.setItem('workouts', JSON.stringify(data));
     }
 
     function saveCloud() {
-  suppressNextSnapshot = true;
-  return db.collection("users").doc("main").set({
-    workouts: data,
-    updatedAt: Date.now()
-  }).catch((err) => {
-    suppressNextSnapshot = false;
-    console.error("Firebase save error:", err);
-  });
-}
+      suppressNextSnapshot = true;
+      return db.collection("users").doc("main").set({
+        workouts: data,
+        updatedAt: Date.now()
+      }).catch((err) => {
+        suppressNextSnapshot = false;
+        console.error("Firebase save error:", err);
+      });
+    }
+
     function save() {
-  saveLocal();
-  return saveCloud();
-}
+      saveLocal();
+      return saveCloud();
+    }
 
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -289,10 +359,59 @@
       document.execCommand(cmd, false, value);
     }
 
+    // ===== SYNC =====
+    db.collection("users").doc("main").onSnapshot(doc => {
+      if (!doc.exists) return;
+
+      if (suppressNextSnapshot) {
+        suppressNextSnapshot = false;
+        return;
+      }
+
+      const cloud = doc.data().workouts || [];
+      data = cloud;
+      localStorage.setItem('workouts', JSON.stringify(data));
+
+      if (currentTab === 'calendar') {
+        renderCalendar();
+      } else if (typeof cw === "number" && data[cw]) {
+        openW(cw);
+      } else {
+        cw = null;
+        home();
+      }
+    }, err => {
+      console.error("Firebase sync error:", err);
+    });
+
+    // ===== TOP TABS =====
+    function renderTabs() {
+      return `
+        <div class="tabs">
+          <button class="${currentTab === 'workouts' ? 'active' : 'secondary'}" onclick="goWorkouts()">Тренировки</button>
+          <button class="${currentTab === 'calendar' ? 'active' : 'secondary'}" onclick="goCalendar()">Календарь</button>
+        </div>
+      `;
+    }
+
+    function goWorkouts() {
+      currentTab = 'workouts';
+      cw = null;
+      home();
+    }
+
+    function goCalendar() {
+      currentTab = 'calendar';
+      renderCalendar();
+    }
+
+    // ===== WORKOUTS HOME =====
     function home() {
+      currentTab = 'workouts';
       const app = document.getElementById('app');
 
       app.innerHTML = `
+        ${renderTabs()}
         <div class="title">Тренировки</div>
         <div id="list"></div>
 
@@ -375,11 +494,13 @@
     }
 
     function openW(i) {
+      currentTab = 'workouts';
       cw = i;
       const w = data[i];
       const app = document.getElementById('app');
 
       app.innerHTML = `
+        ${renderTabs()}
         <button class="secondary" onclick="home()">← Назад</button>
         <div class="title">${escapeHtml(w.name)}</div>
         <div id="list"></div>
@@ -735,28 +856,81 @@
 
       input.click();
     }
-db.collection("users").doc("main").onSnapshot(doc => {
-  if (!doc.exists) return;
 
-  const cloud = doc.data().workouts || [];
+    // ===== CALENDAR =====
+    function renderCalendar() {
+      currentTab = 'calendar';
+      const app = document.getElementById('app');
 
-  // обновляем данные
-  data = cloud;
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
 
-  // сохраняем локально
-  localStorage.setItem('workouts', JSON.stringify(data));
+      const monthNames = [
+        'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+      ];
 
-  // обновляем экран
-  if (typeof cw === "number" && data[cw]) {
-    openW(cw);
-  } else {
-    cw = null;
-    home();
-  }
+      const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-}, err => {
-  console.error("Firebase sync error:", err);
-});
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+
+      let startWeekDay = firstDay.getDay();
+      if (startWeekDay === 0) startWeekDay = 7; // воскресенье -> 7
+      const leading = startWeekDay - 1;
+
+      const daysInMonth = lastDay.getDate();
+
+      const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+      const today = new Date();
+      const isCurrentMonth =
+        today.getFullYear() === year && today.getMonth() === month;
+
+      let cells = '';
+
+      // Дни предыдущего месяца
+      for (let i = leading - 1; i >= 0; i--) {
+        cells += `<div class="calendarDay muted">${prevMonthLastDay - i}</div>`;
+      }
+
+      // Дни текущего месяца
+      for (let day = 1; day <= daysInMonth; day++) {
+        const todayClass =
+          isCurrentMonth && today.getDate() === day ? ' today' : '';
+        cells += `<div class="calendarDay${todayClass}">${day}</div>`;
+      }
+
+      // Дни следующего месяца до заполнения сетки
+      const totalCellsBeforeTail = leading + daysInMonth;
+      const tail = totalCellsBeforeTail % 7 === 0 ? 0 : 7 - (totalCellsBeforeTail % 7);
+
+      for (let day = 1; day <= tail; day++) {
+        cells += `<div class="calendarDay muted">${day}</div>`;
+      }
+
+      app.innerHTML = `
+        ${renderTabs()}
+        <div class="card">
+          <div class="calendarHeader">
+            <button class="secondary" onclick="changeMonth(-1)">←</button>
+            <div class="calendarTitle">${monthNames[month]} ${year}</div>
+            <button class="secondary" onclick="changeMonth(1)">→</button>
+          </div>
+
+          <div class="calendarGrid">
+            ${weekDays.map(d => `<div class="calendarWeekday">${d}</div>`).join('')}
+            ${cells}
+          </div>
+        </div>
+      `;
+    }
+
+    function changeMonth(delta) {
+      calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + delta, 1);
+      renderCalendar();
+    }
+
     // ===== START =====
     home();
   </script>
