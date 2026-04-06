@@ -401,7 +401,6 @@
 
     let currentTab = 'workouts';
     let calendarCursor = new Date();
-    let newWorkoutColor = '#007aff';
 
     const workoutColors = [
       '#007aff',
@@ -493,26 +492,18 @@
       renderCalendar();
     }
 
-    function renderColorPicker(selected, onClickName) {
+    function renderColorPicker(selected, onClickName, extraArg = '') {
       return `
         <div class="colorPicker">
           ${workoutColors.map(color => `
             <div
               class="colorOption ${selected === color ? 'active' : ''}"
               style="background:${color}"
-              onclick="${onClickName}('${color}')"
+              onclick="${onClickName}(${extraArg ? `${extraArg}, ` : ''}'${color}')"
             ></div>
           `).join('')}
         </div>
       `;
-    }
-
-    function setNewWorkoutColor(color) {
-      newWorkoutColor = color;
-      const picker = document.getElementById('newWorkoutColorPicker');
-      if (picker) {
-        picker.innerHTML = renderColorPicker(newWorkoutColor, 'setNewWorkoutColor');
-      }
     }
 
     function home() {
@@ -527,10 +518,6 @@
         <div class="row">
           <input id="nw" placeholder="Новая тренировка" style="flex:1" />
           <button onclick="addW()">Добавить</button>
-        </div>
-
-        <div id="newWorkoutColorPicker">
-          ${renderColorPicker(newWorkoutColor, 'setNewWorkoutColor')}
         </div>
 
         <div class="row">
@@ -568,12 +555,15 @@
 
         d.innerHTML = `
           <div class="colorPreviewRow">
-            <div class="workoutColorDot" style="background:${w.color || '#007aff'}"></div>
+            <div
+              class="workoutColorDot"
+              style="background:${w.color || '#8e8e93'};cursor:pointer"
+              onclick="openWorkoutColorEditor(${i})"
+            ></div>
             <b>${escapeHtml(w.name)}</b>
           </div>
           <div class="row">
             <button onclick="openW(${i})">Открыть</button>
-            <button class="secondary small" onclick="openWorkoutColorEditor(${i})">Цвет</button>
             <button class="green small" onclick="done(${i})">✔</button>
             <button class="red small" onclick="undone(${i})">✖</button>
           </div>
@@ -591,7 +581,7 @@
       data.push({
         id: 'w_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
         name: v,
-        color: newWorkoutColor,
+        color: '#8e8e93',
         exercises: []
       });
 
@@ -603,19 +593,13 @@
     function openWorkoutColorEditor(index) {
       const w = data[index];
       openCustomModal(`
-        <div class="title" style="font-size:18px;margin-bottom:8px">Цвет тренировки</div>
+        <div class="title" style="font-size:18px;margin-bottom:8px">Изменить цвет</div>
         <div class="colorPreviewRow" style="margin-bottom:8px">
-          <div class="workoutColorDot" style="background:${w.color || '#007aff'}"></div>
+          <div class="workoutColorDot" style="background:${w.color || '#8e8e93'}"></div>
           <b>${escapeHtml(w.name)}</b>
         </div>
         <div id="editWorkoutColorPicker">
-          ${workoutColors.map(color => `
-            <div
-              class="colorOption ${w.color === color ? 'active' : ''}"
-              style="background:${color};display:inline-block;margin-right:8px;margin-bottom:8px"
-              onclick="setWorkoutColor(${index}, '${color}')"
-            ></div>
-          `).join('')}
+          ${renderColorPicker(w.color || '#8e8e93', 'setWorkoutColor', index)}
         </div>
       `);
     }
@@ -1042,9 +1026,11 @@
     }
 
     function formatDayKey(y, m, d) {
-      const mm = String(m + 1).padStart(2, '0');
-      const dd = String(d).padStart(2, '0');
-      return `${y}-${mm}-${dd}`;
+      const safeDate = new Date(y, m, d);
+      const yy = safeDate.getFullYear();
+      const mm = String(safeDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(safeDate.getDate()).padStart(2, '0');
+      return `${yy}-${mm}-${dd}`;
     }
 
     function monthTitle(date) {
@@ -1058,6 +1044,14 @@
     function changeMonth(delta) {
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
       renderCalendar();
+    }
+
+    function buildDayDots(entries) {
+      return entries.map(entry => {
+        const workout = data.find(w => w.id === entry.workoutId);
+        if (!workout) return '';
+        return `<div class="dayDot" style="background:${workout.color || '#8e8e93'}"></div>`;
+      }).join('');
     }
 
     function renderCalendar() {
@@ -1087,10 +1081,14 @@
 
       for (let i = leadingDays - 1; i >= 0; i--) {
         const day = prevMonthLast - i;
+        const prevKey = formatDayKey(year, month - 1, day);
+        const prevEntries = calendarData[prevKey] || [];
+        const prevDots = buildDayDots(prevEntries);
+
         cells += `
-          <div class="dayCell outsideMonth">
+          <div class="dayCell outsideMonth" onclick="openDay('${prevKey}')">
             <div class="dayNumber">${day}</div>
-            <div class="dayDots"></div>
+            <div class="dayDots">${prevDots}</div>
           </div>
         `;
       }
@@ -1098,12 +1096,7 @@
       for (let day = 1; day <= daysInMonth; day++) {
         const key = formatDayKey(year, month, day);
         const entries = calendarData[key] || [];
-        const dots = entries.map(entry => {
-          const workout = data.find(w => w.id === entry.workoutId);
-          if (!workout) return '';
-          return `<div class="dayDot" style="background:${workout.color || '#007aff'}"></div>`;
-        }).join('');
-
+        const dots = buildDayDots(entries);
         const todayClass = key === todayKey ? ' today' : '';
 
         cells += `
@@ -1118,10 +1111,14 @@
       const trailing = used % 7 === 0 ? 0 : 7 - (used % 7);
 
       for (let day = 1; day <= trailing; day++) {
+        const nextKey = formatDayKey(year, month + 1, day);
+        const nextEntries = calendarData[nextKey] || [];
+        const nextDots = buildDayDots(nextEntries);
+
         cells += `
-          <div class="dayCell outsideMonth">
+          <div class="dayCell outsideMonth" onclick="openDay('${nextKey}')">
             <div class="dayNumber">${day}</div>
-            <div class="dayDots"></div>
+            <div class="dayDots">${nextDots}</div>
           </div>
         `;
       }
@@ -1155,7 +1152,7 @@
             return `
               <div class="modalListItem">
                 <div style="display:flex;align-items:center;gap:8px">
-                  <div class="workoutColorDot" style="background:${workout.color || '#007aff'}"></div>
+                  <div class="workoutColorDot" style="background:${workout.color || '#8e8e93'}"></div>
                   <span>${escapeHtml(workout.name)}</span>
                 </div>
                 <button class="red" onclick="removeWorkoutFromDay('${key}', ${idx})">🗑</button>
@@ -1168,7 +1165,7 @@
         ? data.map((w, i) => `
             <div class="modalListItem">
               <div style="display:flex;align-items:center;gap:8px">
-                <div class="workoutColorDot" style="background:${w.color || '#007aff'}"></div>
+                <div class="workoutColorDot" style="background:${w.color || '#8e8e93'}"></div>
                 <span>${escapeHtml(w.name)}</span>
               </div>
               <button onclick="addWorkoutToDay('${key}', ${i})">Добавить</button>
@@ -1197,7 +1194,7 @@
           changed = true;
         }
         if (!w.color) {
-          w.color = '#007aff';
+          w.color = '#8e8e93';
           changed = true;
         }
       });
