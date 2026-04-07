@@ -2,231 +2,85 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Журнал тренировок</title>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f2f2f7;
+    :root{
+      --bg:#f2f2f7;
+      --card:#ffffff;
+      --text:#111111;
+      --muted:#6e6e73;
+      --blue:#007aff;
+      --green:#34c759;
+      --red:#ff3b30;
+      --yellow:#ffcc00;
+      --soft:#e5e5ea;
+      --soft2:#f8f8fa;
+      --border:#d9d9de;
+      --shadow:0 4px 10px rgba(0,0,0,0.05);
+      --shadow2:0 10px 24px rgba(0,0,0,0.12);
+      --radius:18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
       margin: 0;
-      color: #111;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     .container {
-      max-width: 420px;
+      max-width: 430px;
       margin: auto;
-      padding: 16px;
-      padding-bottom: 92px;
+      padding: 14px 14px calc(90px + env(safe-area-inset-bottom));
+      min-height: 100dvh;
     }
 
-    .card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      position: relative;
-      transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
-    }
-
-    .card.dragging {
-      opacity: 0.65;
-      transform: scale(1.02);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-    }
-
-    .done { background: #e8f8ee; }
-    .special { background: #e6f0ff; }
-    .extra { background: #e8f8ee; }
-
-    .exercise-img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-      border-radius: 12px;
-      margin-top: 8px;
-      display: block;
-    }
-
-    button {
-      padding: 6px 8px;
-      border: none;
-      border-radius: 8px;
-      background: #007aff;
-      color: #fff;
-      cursor: pointer;
-      font-size: 14px;
-      transition: transform .15s ease, opacity .15s ease;
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
-    .small {
-      font-size: 12px;
-      padding: 4px 6px;
-    }
-
-    .green { background: #34c759; }
-    .red { background: #ff3b30; }
-    .yellow { background: #ffcc00; color: #000; }
-    .secondary { background: #e5e5ea; color: #000; }
-
-    .bigBtn {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-    }
-
-    .row {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-      align-items: center;
+    .stickyTop {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: linear-gradient(to bottom, rgba(242,242,247,.96), rgba(242,242,247,.88));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding-bottom: 10px;
     }
 
     .title {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-
-    .setRow {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 4px;
-      font-size: 14px;
-    }
-
-    .plus {
-      color: #34c759;
+      font-size: 28px;
       font-weight: 700;
-    }
-
-    .minus {
-      color: #ff3b30;
-      font-weight: 700;
-    }
-
-    .infoBtn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .gray { background: #d1d1d6; color: #000; }
-    .yellowBg { background: #ffcc00; color: #000; }
-
-    .editor {
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      padding: 12px;
-      min-height: 180px;
-      background: #fff;
-      line-height: 1.55;
-      font-size: 16px;
-      outline: none;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 4px;
-      margin: 8px 0;
-      flex-wrap: wrap;
-    }
-
-    .toolbar button,
-    .toolbar select {
-      background: #e5e5ea;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      padding: 6px 8px;
-      font-size: 13px;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s ease;
-      z-index: 999;
-      padding: 16px;
-    }
-
-    .modal.show {
-      background: rgba(0,0,0,0.3);
-    }
-
-    .modalBox {
-      background: #fff;
-      padding: 16px;
-      border-radius: 18px;
-      width: 100%;
-      max-width: 380px;
-      transform: translateY(18px);
-      opacity: 0;
-      transition: transform 0.22s ease, opacity 0.22s ease;
-      max-height: 84vh;
-      overflow: auto;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-    }
-
-    .modal.show .modalBox {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    input, select, textarea {
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      box-sizing: border-box;
-      font-family: inherit;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 100px;
-      resize: vertical;
-    }
-
-    .modalListItem {
-      background: #f8f8fa;
-      border-radius: 12px;
-      padding: 10px;
-      margin-top: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
+      margin: 0 0 12px;
+      letter-spacing: -0.02em;
     }
 
     .tabs {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+    }
+
+    .tabs button {
+      min-height: 44px;
+      border-radius: 14px;
+      background: var(--soft);
+      color: #000;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
     }
 
     .tabs button.activeTab {
@@ -234,19 +88,249 @@
       color: #fff;
     }
 
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      position: relative;
+      transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+    }
+
+    .card:active {
+      transform: scale(0.995);
+    }
+
+    .card.dragging {
+      opacity: .7;
+      transform: scale(1.02);
+      box-shadow: var(--shadow2);
+    }
+
+    .done { background: #e8f8ee; }
+    .special { background: #e6f0ff; }
+    .extra { background: #e8f8ee; }
+
+    button {
+      min-height: 42px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform .15s ease, opacity .15s ease, background .15s ease;
+    }
+
+    button:active { transform: scale(0.98); }
+
+    .small {
+      min-height: 34px;
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 10px;
+    }
+
+    .green { background: var(--green); }
+    .red { background: var(--red); }
+    .yellow { background: var(--yellow); color: #000; }
+    .secondary { background: var(--soft); color: #000; }
+
+    .bigBtn {
+      width: 100%;
+      min-height: 48px;
+      font-size: 16px;
+      border-radius: 14px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid #d1d1d6;
+      font-size: 15px;
+      padding: 10px 12px;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .helper {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
     .workoutColorDot {
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
-      flex: 0 0 12px;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+      flex: 0 0 14px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+    }
+
+    .colorPreviewRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .colorPicker {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .colorOption {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+    }
+
+    .colorOption.active {
+      border-color: #111;
+      transform: scale(1.08);
+    }
+
+    .exercise-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 14px;
+      margin-top: 10px;
+      display: block;
+    }
+
+    .setRow {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 14px;
+    }
+
+    .plus { color: var(--green); font-weight: 700; }
+    .minus { color: var(--red); font-weight: 700; }
+
+    .infoBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      background: #d1d1d6;
+      color: #000;
+    }
+
+    .yellowBg { background: var(--yellow); color: #000; }
+
+    .toolbar {
+      display: flex;
+      gap: 6px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .toolbar button,
+    .toolbar select {
+      background: var(--soft);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      min-height: 38px;
+      width: auto;
+    }
+
+    .editor {
+      border: 1px solid #d1d1d6;
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 220px;
+      background: #fff;
+      font-size: 16px;
+      line-height: 1.55;
+      outline: none;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      transition: background .22s ease;
+      z-index: 999;
+      padding: 0;
+    }
+
+    .modal.show {
+      background: rgba(0,0,0,.3);
+    }
+
+    .modalBox {
+      width: 100%;
+      max-width: 430px;
+      max-height: 90dvh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 22px 22px 0 0;
+      padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+      transform: translateY(24px);
+      opacity: 0;
+      transition: transform .22s ease, opacity .22s ease;
+      box-shadow: 0 -10px 30px rgba(0,0,0,.12);
+    }
+
+    .modal.show .modalBox {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .modalListItem {
+      background: var(--soft2);
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
 
     .calendarWrap {
       background: #fff;
-      border-radius: 16px;
+      border-radius: 18px;
       padding: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      box-shadow: var(--shadow);
     }
 
     .calendarHeader {
@@ -258,7 +342,7 @@
 
     .calendarTitle {
       font-size: 18px;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .calendarGrid {
@@ -272,38 +356,34 @@
       font-size: 12px;
       color: #666;
       padding: 4px 0 6px;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .dayCell {
-      min-height: 58px;
-      background: #f8f8fa;
-      border-radius: 12px;
+      min-height: 64px;
+      background: var(--soft2);
+      border-radius: 14px;
       padding: 6px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       cursor: pointer;
       border: 1px solid transparent;
+      transition: transform .14s ease, border-color .14s ease;
     }
 
-    .dayCell:hover {
-      border-color: #d9d9de;
-    }
-
-    .dayCell.outsideMonth {
-      opacity: 0.45;
-    }
-
+    .dayCell:active { transform: scale(0.98); }
+    .dayCell:hover { border-color: var(--border); }
+    .dayCell.outsideMonth { opacity: .45; }
     .dayCell.today {
       background: #eef5ff;
-      border-color: #007aff;
-      box-shadow: inset 0 0 0 1px #007aff;
+      border-color: var(--blue);
+      box-shadow: inset 0 0 0 1px var(--blue);
     }
 
     .dayNumber {
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       text-align: right;
     }
 
@@ -311,7 +391,6 @@
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
-      justify-content: flex-start;
       align-items: center;
       min-height: 10px;
     }
@@ -320,52 +399,11 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
     }
 
-    .modalSectionTitle {
-      margin-top: 12px;
-      margin-bottom: 6px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #444;
-    }
-
-    .emptyText {
-      color: #777;
-      font-size: 13px;
-      margin-top: 6px;
-    }
-
-    .colorPicker {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-top: 8px;
-    }
-
-    .colorOption {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
-    }
-
-    .colorOption.active {
-      border-color: #111;
-    }
-
-    .colorPreviewRow {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Notes */
-    .notesTopBar {
+    /* Notes UI */
+    .notesHeader {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -379,9 +417,8 @@
     }
 
     .notesSegments,
-    .notesFilters,
-    .tagWrap,
-    .folderWrap {
+    .folderWrap,
+    .tagWrap {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
@@ -396,10 +433,20 @@
       padding: 8px 12px;
       font-size: 13px;
       cursor: pointer;
-      transition: all .16s ease;
+      min-height: 38px;
     }
 
     .chip.active {
+      background: #111;
+      color: #fff;
+    }
+
+    .viewSwitch {
+      display: flex;
+      gap: 6px;
+    }
+
+    .viewSwitch button.active {
       background: #111;
       color: #fff;
     }
@@ -421,21 +468,28 @@
       border-radius: 18px;
       padding: 14px;
       position: relative;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      box-shadow: var(--shadow);
       transition: transform .18s ease, box-shadow .18s ease;
       cursor: pointer;
+      animation: noteFade .18s ease;
+    }
+
+    @keyframes noteFade {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .noteCard:hover {
       transform: translateY(-1px);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 18px rgba(0,0,0,.08);
     }
 
     .noteCardTitle {
       font-size: 16px;
       font-weight: 700;
       margin-bottom: 6px;
-      padding-right: 112px;
+      padding-right: 120px;
+      line-height: 1.3;
     }
 
     .noteCardPreview {
@@ -480,8 +534,8 @@
       justify-content: space-between;
       align-items: center;
       gap: 8px;
-      background: #f8f8fa;
-      border-radius: 12px;
+      background: var(--soft2);
+      border-radius: 14px;
       padding: 10px 12px;
       margin-top: 8px;
     }
@@ -489,34 +543,28 @@
     .notesFab {
       position: fixed;
       right: 18px;
-      bottom: 22px;
+      bottom: calc(22px + env(safe-area-inset-bottom));
       width: 58px;
       height: 58px;
       border-radius: 50%;
       font-size: 28px;
       line-height: 1;
-      box-shadow: 0 10px 24px rgba(0,122,255,0.24);
-      z-index: 20;
-    }
-
-    .viewSwitch {
-      display: flex;
-      gap: 6px;
-    }
-
-    .viewSwitch button.active {
-      background: #111;
-      color: #fff;
-    }
-
-    .helper {
-      font-size: 12px;
-      color: #777;
+      box-shadow: 0 10px 24px rgba(0,122,255,.24);
+      z-index: 40;
     }
 
     @media (min-width: 760px) {
       .notesGrid {
         grid-template-columns: 1fr 1fr;
+      }
+      .modal {
+        align-items: center;
+        padding: 16px;
+      }
+      .modalBox {
+        max-width: 760px;
+        border-radius: 22px;
+        transform: translateY(18px);
       }
     }
   </style>
@@ -549,7 +597,6 @@
     let dragW = null;
     let dragE = null;
     let suppressNextSnapshot = false;
-
     let currentTab = 'notes';
     let calendarCursor = new Date();
     let notesSearch = '';
@@ -621,6 +668,11 @@
       });
     }
 
+    function normalizeTags(list) {
+      if (!Array.isArray(list)) return [];
+      return list.map(t => String(t).trim()).filter(Boolean);
+    }
+
     function ensureWorkoutIds() {
       let changed = false;
       data.forEach(w => {
@@ -638,45 +690,33 @@
 
     function ensureDefaultFolder() {
       if (!notesFolders.length) {
-        notesFolders = [
-          { id: 'fld_default', name: 'Личное', createdAt: Date.now() }
-        ];
+        notesFolders = [{ id: 'fld_default', name: 'Личное', createdAt: Date.now() }];
       }
-    }
-
-    function normalizeTags(raw) {
-      return (raw || [])
-        .map(t => String(t).trim())
-        .filter(Boolean);
     }
 
     function migrateNotesSystem() {
       ensureDefaultFolder();
-
-      notesData = notesData.map(note => {
-        const folderId = note.folderId || notesFolders[0]?.id || 'fld_default';
-        return {
-          id: note.id || ('n_' + Math.random().toString(36).slice(2) + Date.now().toString(36)),
-          title: note.title || '',
-          content: note.content || '',
-          pinned: !!note.pinned,
-          favorite: !!note.favorite,
-          folderId,
-          tags: normalizeTags(note.tags || []),
-          createdAt: note.createdAt || Date.now(),
-          updatedAt: note.updatedAt || Date.now()
-        };
-      });
-    }
-
-    function allTags() {
-      const tags = new Set();
-      notesData.forEach(n => (n.tags || []).forEach(tag => tags.add(tag)));
-      return [...tags].sort((a, b) => a.localeCompare(b, 'ru'));
+      notesData = notesData.map(note => ({
+        id: note.id || ('n_' + Math.random().toString(36).slice(2) + Date.now().toString(36)),
+        title: note.title || '',
+        content: note.content || '',
+        pinned: !!note.pinned,
+        favorite: !!note.favorite,
+        folderId: note.folderId || notesFolders[0].id,
+        tags: normalizeTags(note.tags || []),
+        createdAt: note.createdAt || Date.now(),
+        updatedAt: note.updatedAt || Date.now()
+      }));
     }
 
     function folderNameById(folderId) {
       return notesFolders.find(f => f.id === folderId)?.name || 'Без папки';
+    }
+
+    function allTags() {
+      const set = new Set();
+      notesData.forEach(n => (n.tags || []).forEach(t => set.add(t)));
+      return [...set].sort((a,b)=>a.localeCompare(b,'ru'));
     }
 
     db.collection("users").doc("main").onSnapshot(doc => {
@@ -714,10 +754,12 @@
 
     function renderTabs() {
       return `
-        <div class="tabs">
-          <button class="${currentTab === 'notes' ? 'activeTab' : 'secondary'}" onclick="showNotes()">Заметки</button>
-          <button class="${currentTab === 'workouts' ? 'activeTab' : 'secondary'}" onclick="showWorkouts()">Тренировки</button>
-          <button class="${currentTab === 'calendar' ? 'activeTab' : 'secondary'}" onclick="showCalendar()">Календарь</button>
+        <div class="stickyTop">
+          <div class="tabs">
+            <button class="${currentTab === 'notes' ? 'activeTab' : 'secondary'}" onclick="showNotes()">Заметки</button>
+            <button class="${currentTab === 'workouts' ? 'activeTab' : 'secondary'}" onclick="showWorkouts()">Тренировки</button>
+            <button class="${currentTab === 'calendar' ? 'activeTab' : 'secondary'}" onclick="showCalendar()">Календарь</button>
+          </div>
         </div>
       `;
     }
@@ -751,6 +793,8 @@
         </div>
       `;
     }
+
+    /* ---------------- NOTES ---------------- */
 
     function setNotesView(view) {
       notesPrefs.view = view;
@@ -819,8 +863,9 @@
 
       app.innerHTML = `
         ${renderTabs()}
-        <div class="notesTopBar">
-          <div class="title" style="margin-bottom:0">Заметки</div>
+
+        <div class="notesHeader">
+          <h1 class="title">Заметки</h1>
           <div class="viewSwitch">
             <button class="${notesPrefs.view === 'grid' ? 'active' : 'secondary'}" onclick="setNotesView('grid')">▥</button>
             <button class="${notesPrefs.view === 'list' ? 'active' : 'secondary'}" onclick="setNotesView('list')">☰</button>
@@ -852,26 +897,23 @@
 
         ${notesPrefs.section === 'folders' ? `
           <div class="card">
-            <div class="modalSectionTitle">Управление папками</div>
             <div class="row">
               <input id="newFolderName" placeholder="Новая папка" style="flex:1">
               <button onclick="createFolder()">Создать</button>
             </div>
-            <div id="foldersManageList">
-              ${notesFolders.map(f => `
-                <div class="folderManageRow">
-                  <span>${escapeHtml(f.name)}</span>
-                  <div class="row" style="margin-top:0">
-                    <button class="small" onclick="renameFolder('${f.id}')">✏️</button>
-                    <button class="small red" onclick="deleteFolder('${f.id}')">🗑</button>
-                  </div>
+            ${notesFolders.map(f => `
+              <div class="folderManageRow">
+                <span>${escapeHtml(f.name)}</span>
+                <div class="row" style="margin-top:0">
+                  <button class="small" onclick="renameFolder('${f.id}')">✏️</button>
+                  <button class="small red" onclick="deleteFolder('${f.id}')">🗑</button>
                 </div>
-              `).join('')}
-            </div>
+              </div>
+            `).join('')}
           </div>
         ` : ''}
 
-        <div class="${notesPrefs.view === 'grid' ? 'notesGrid' : 'notesList'}" id="notesListArea">
+        <div class="${notesPrefs.view === 'grid' ? 'notesGrid' : 'notesList'}">
           ${items.length ? items.map(note => `
             <div class="noteCard" onclick="openNoteEditor('${note.id}')">
               <div class="noteCardActions">
@@ -889,7 +931,7 @@
             </div>
           `).join('') : `
             <div class="card">
-              <div class="emptyText">Нет заметок по текущему фильтру.</div>
+              <div class="helper">Нет заметок по текущим фильтрам.</div>
             </div>
           `}
         </div>
@@ -975,7 +1017,7 @@
       clearTimeout(noteAutosaveTimer);
       noteAutosaveTimer = setTimeout(() => {
         saveNoteFromModal(noteId, true);
-      }, 500);
+      }, 450);
     }
 
     function openNoteEditor(noteId = null) {
@@ -998,9 +1040,9 @@
       };
 
       openCustomModal(`
-        <div class="title" style="font-size:18px;margin-bottom:8px">${noteId ? 'Заметка' : 'Новая заметка'}</div>
+        <div class="title" style="font-size:20px;margin-bottom:10px">${noteId ? 'Заметка' : 'Новая заметка'}</div>
 
-        <input id="noteTitleInput" class="noteEditorTitle" placeholder="Заголовок" value="${escapeHtml(note.title)}" oninput="queueNoteAutosave('${note.id}')">
+        <input id="noteTitleInput" placeholder="Заголовок" value="${escapeHtml(note.title)}" oninput="queueNoteAutosave('${note.id}')">
 
         <div class="row">
           <select id="noteFolderSelect" style="flex:1" onchange="queueNoteAutosave('${note.id}')">
@@ -1014,15 +1056,8 @@
           <button onclick="fmt('italic')">I</button>
           <button onclick="fmt('underline')">U</button>
           <button onclick="insertHeading()">H</button>
-          <button onclick="insertBulletList()">• Список</button>
+          <button onclick="insertBulletList()">•</button>
           <button onclick="insertChecklist()">☑︎</button>
-          <select onchange="fmt('fontName', this.value)">
-            <option value="">Шрифт</option>
-            <option value="Arial">Arial</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Courier New">Courier</option>
-            <option value="Verdana">Verdana</option>
-          </select>
         </div>
 
         <div contenteditable="true" class="editor" id="noteContentEditor" oninput="queueNoteAutosave('${note.id}')">${note.content || ''}</div>
@@ -1033,10 +1068,7 @@
           <button class="secondary" onclick="toggleFavoriteNoteFromEditor('${note.id}')">${note.favorite ? 'Убрать ★' : 'В избранное'}</button>
         </div>
 
-        <div class="helper">
-          Автосохранение включено
-        </div>
-
+        <div class="helper">Автосохранение включено</div>
         <div class="helper">
           Создано: ${escapeHtml(formatDateTime(note.createdAt))}<br>
           Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}
@@ -1133,12 +1165,7 @@
       renderNotes();
     }
 
-    function closeTopModal() {
-      const modal = document.querySelector('.modal');
-      if (!modal) return;
-      modal.classList.remove('show');
-      setTimeout(() => modal.remove(), 180);
-    }
+    /* ---------------- WORKOUTS ---------------- */
 
     function home() {
       currentTab = 'workouts';
@@ -1146,7 +1173,7 @@
 
       app.innerHTML = `
         ${renderTabs()}
-        <div class="title">Тренировки</div>
+        <h1 class="title">Тренировки</h1>
         <div id="list"></div>
 
         <div class="row">
@@ -1227,14 +1254,12 @@
     function openWorkoutColorEditor(index) {
       const w = data[index];
       openCustomModal(`
-        <div class="title" style="font-size:18px;margin-bottom:8px">Изменить цвет</div>
+        <div class="title" style="font-size:20px;margin-bottom:8px">Изменить цвет</div>
         <div class="colorPreviewRow" style="margin-bottom:8px">
           <div class="workoutColorDot" style="background:${w.color || '#8e8e93'}"></div>
           <b>${escapeHtml(w.name)}</b>
         </div>
-        <div id="editWorkoutColorPicker">
-          ${renderColorPicker(w.color || '#8e8e93', index)}
-        </div>
+        ${renderColorPicker(w.color || '#8e8e93', index)}
       `);
     }
 
@@ -1271,7 +1296,7 @@
       app.innerHTML = `
         ${renderTabs()}
         <button class="secondary" onclick="home()">← Назад</button>
-        <div class="title">${escapeHtml(w.name)}</div>
+        <h1 class="title">${escapeHtml(w.name)}</h1>
         <div id="list"></div>
 
         <button class="bigBtn" onclick="addE('normal')">Добавить упражнение</button>
@@ -1286,10 +1311,7 @@
 
       w.exercises.forEach((e, i) => {
         const d = document.createElement('div');
-        d.className =
-          'card' +
-          (e.special ? ' special' : '') +
-          (e.extra ? ' extra' : '');
+        d.className = 'card' + (e.special ? ' special' : '') + (e.extra ? ' extra' : '');
 
         d.draggable = true;
 
@@ -1324,7 +1346,6 @@
           if (l && r) {
             const lw = parseFloat(String(l).split('x')[0]) || 0;
             const rw = parseFloat(String(r).split('x')[0]) || 0;
-
             if (rw > lw) diff = '<span class="plus">▲</span>';
             if (rw < lw) diff = '<span class="minus">▼</span>';
           }
@@ -1378,9 +1399,7 @@
           <div class="row">
             <button onclick="openSets(${i})">Подходы</button>
             <button class="yellow" onclick="newRes(${i})">Новый результат</button>
-            ${(e.newSets && e.newSets.length)
-              ? `<button class="green" onclick="saveRes(${i})">Сохранить</button>`
-              : ''}
+            ${(e.newSets && e.newSets.length) ? `<button class="green" onclick="saveRes(${i})">Сохранить</button>` : ''}
           </div>
 
           <div class="infoBtn ${infoClass}" onclick="toggleInfo(${i})">!</div>
@@ -1406,15 +1425,11 @@
 
     function editE(i) {
       const ex = data[cw].exercises[i];
-
       const n = prompt('Название', ex.name);
       if (!n) return;
-
       const img = prompt('Фото', ex.img || '');
-
       ex.name = n;
       ex.img = img || '';
-
       save();
       openW(cw);
     }
@@ -1425,6 +1440,301 @@
       save();
       openW(cw);
     }
+
+    function openSets(i) {
+      ce = i;
+      temp = [...(data[cw].exercises[i].sets || [])];
+      openModal('Подходы', renderSets, addSet);
+    }
+
+    function renderSets() {
+      const list = document.querySelector('.modal #list');
+      if (!list) return;
+      list.innerHTML = '';
+
+      temp.forEach((s, i) => {
+        const d = document.createElement('div');
+        d.className = 'modalListItem';
+        d.innerHTML = `<span>${escapeHtml(s)}</span><button onclick="delSet(${i})">🗑</button>`;
+        list.appendChild(d);
+      });
+    }
+
+    function addSet() {
+      const w = document.querySelector('.modal #w')?.value;
+      const r = document.querySelector('.modal #r')?.value;
+      if (!w || !r) return;
+
+      temp.push(w + 'x' + r);
+      data[cw].exercises[ce].sets = [...temp];
+      save();
+      renderSets();
+      openW(cw);
+    }
+
+    function delSet(i) {
+      temp.splice(i, 1);
+      data[cw].exercises[ce].sets = [...temp];
+      save();
+      renderSets();
+      openW(cw);
+    }
+
+    function newRes(i) {
+      ce = i;
+      temp = [...(data[cw].exercises[i].newSets || [])];
+      openModal('Новый результат', renderTemp, addTemp);
+    }
+
+    function renderTemp() {
+      const list = document.querySelector('.modal #list');
+      if (!list) return;
+      list.innerHTML = '';
+
+      temp.forEach((s, i) => {
+        const d = document.createElement('div');
+        d.className = 'modalListItem';
+        d.innerHTML = `<span>${escapeHtml(s)}</span><button onclick="delTemp(${i})">🗑</button>`;
+        list.appendChild(d);
+      });
+    }
+
+    function addTemp() {
+      const w = document.querySelector('.modal #w')?.value;
+      const r = document.querySelector('.modal #r')?.value;
+      if (!w || !r) return;
+
+      temp.push(w + 'x' + r);
+      data[cw].exercises[ce].newSets = [...temp];
+      save();
+      renderTemp();
+      openW(cw);
+    }
+
+    function delTemp(i) {
+      temp.splice(i, 1);
+
+      if (temp.length === 0) {
+        delete data[cw].exercises[ce].newSets;
+      } else {
+        data[cw].exercises[ce].newSets = [...temp];
+      }
+
+      save();
+      renderTemp();
+      openW(cw);
+    }
+
+    function saveRes(i) {
+      const ex = data[cw].exercises[i];
+      if (!ex.newSets || !ex.newSets.length) return;
+      ex.sets = [...ex.newSets];
+      delete ex.newSets;
+      save();
+      openW(cw);
+    }
+
+    function toggleInfo(i) {
+      data[cw].exercises[i].showInfo = !data[cw].exercises[i].showInfo;
+      save();
+      openW(cw);
+    }
+
+    function saveInfo(i) {
+      const editor = document.getElementById('info' + i);
+      if (!editor) return;
+      data[cw].exercises[i].info = editor.innerHTML;
+      save();
+      openW(cw);
+    }
+
+    /* ---------------- CALENDAR ---------------- */
+
+    function formatDayKey(y, m, d) {
+      const safeDate = new Date(y, m, d);
+      const yy = safeDate.getFullYear();
+      const mm = String(safeDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(safeDate.getDate()).padStart(2, '0');
+      return `${yy}-${mm}-${dd}`;
+    }
+
+    function monthTitle(date) {
+      const months = [
+        'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+      ];
+      return `${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    function changeMonth(delta) {
+      calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+      renderCalendar();
+    }
+
+    function buildDayDots(entries) {
+      return entries.map(entry => {
+        const workout = data.find(w => w.id === entry.workoutId);
+        if (!workout) return '';
+        return `<div class="dayDot" style="background:${workout.color || '#8e8e93'}"></div>`;
+      }).join('');
+    }
+
+    function renderCalendar() {
+      currentTab = 'calendar';
+      const app = document.getElementById('app');
+
+      const year = calendarCursor.getFullYear();
+      const month = calendarCursor.getMonth();
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month + 1, 0);
+
+      let firstWeekDay = first.getDay();
+      if (firstWeekDay === 0) firstWeekDay = 7;
+      const leadingDays = firstWeekDay - 1;
+
+      const daysInMonth = last.getDate();
+      const prevMonthLast = new Date(year, month, 0).getDate();
+
+      const today = new Date();
+      const todayKey = formatDayKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+      const weekLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+      const weekHeader = weekLabels.map(d => `<div class="weekday">${d}</div>`).join('');
+
+      let cells = '';
+
+      for (let i = leadingDays - 1; i >= 0; i--) {
+        const day = prevMonthLast - i;
+        const prevKey = formatDayKey(year, month - 1, day);
+        const prevDots = buildDayDots(calendarData[prevKey] || []);
+        cells += `
+          <div class="dayCell outsideMonth" onclick="openDay('${prevKey}')">
+            <div class="dayNumber">${day}</div>
+            <div class="dayDots">${prevDots}</div>
+          </div>
+        `;
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const key = formatDayKey(year, month, day);
+        const dots = buildDayDots(calendarData[key] || []);
+        const todayClass = key === todayKey ? ' today' : '';
+        cells += `
+          <div class="dayCell${todayClass}" onclick="openDay('${key}')">
+            <div class="dayNumber">${day}</div>
+            <div class="dayDots">${dots}</div>
+          </div>
+        `;
+      }
+
+      const used = leadingDays + daysInMonth;
+      const trailing = used % 7 === 0 ? 0 : 7 - (used % 7);
+
+      for (let day = 1; day <= trailing; day++) {
+        const nextKey = formatDayKey(year, month + 1, day);
+        const nextDots = buildDayDots(calendarData[nextKey] || []);
+        cells += `
+          <div class="dayCell outsideMonth" onclick="openDay('${nextKey}')">
+            <div class="dayNumber">${day}</div>
+            <div class="dayDots">${nextDots}</div>
+          </div>
+        `;
+      }
+
+      app.innerHTML = `
+        ${renderTabs()}
+        <h1 class="title">Календарь</h1>
+
+        <div class="calendarWrap">
+          <div class="calendarHeader">
+            <button class="secondary" onclick="changeMonth(-1)">←</button>
+            <div class="calendarTitle">${monthTitle(calendarCursor)}</div>
+            <button class="secondary" onclick="changeMonth(1)">→</button>
+          </div>
+
+          <div class="calendarGrid">
+            ${weekHeader}
+            ${cells}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDayModal(key) {
+      const entries = calendarData[key] || [];
+
+      const existingHtml = entries.length
+        ? entries.map((entry, idx) => {
+            const workout = data.find(w => w.id === entry.workoutId);
+            if (!workout) return '';
+            return `
+              <div class="modalListItem">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="workoutColorDot" style="background:${workout.color || '#8e8e93'}"></div>
+                  <span>${escapeHtml(workout.name)}</span>
+                </div>
+                <button class="red" onclick="removeWorkoutFromDay('${key}', ${idx})">🗑</button>
+              </div>
+            `;
+          }).join('')
+        : `<div class="helper">На этот день пока ничего не добавлено.</div>`;
+
+      const options = data.length
+        ? data.map((w, i) => `
+            <div class="modalListItem">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="workoutColorDot" style="background:${w.color || '#8e8e93'}"></div>
+                <span>${escapeHtml(w.name)}</span>
+              </div>
+              <button onclick="addWorkoutToDay('${key}', ${i})">Добавить</button>
+            </div>
+          `).join('')
+        : `<div class="helper">Сначала добавь тренировки.</div>`;
+
+      openCustomModal(`
+        <div class="title" style="font-size:20px;margin-bottom:8px">День ${key}</div>
+        <div class="helper">Добавленные тренировки</div>
+        ${existingHtml}
+        <div class="helper" style="margin-top:12px">Выбрать тренировку</div>
+        ${options}
+      `);
+    }
+
+    function openDay(key) {
+      renderDayModal(key);
+    }
+
+    function addWorkoutToDay(key, workoutIndex) {
+      const workout = data[workoutIndex];
+      if (!workout) return;
+
+      ensureWorkoutIds();
+
+      if (!calendarData[key]) calendarData[key] = [];
+      calendarData[key].push({
+        workoutId: workout.id,
+        addedAt: Date.now()
+      });
+
+      save();
+      renderDayModal(key);
+      renderCalendar();
+    }
+
+    function removeWorkoutFromDay(key, entryIndex) {
+      if (!calendarData[key]) return;
+      calendarData[key].splice(entryIndex, 1);
+
+      if (calendarData[key].length === 0) {
+        delete calendarData[key];
+      }
+
+      save();
+      renderDayModal(key);
+      renderCalendar();
+    }
+
+    /* ---------------- MODALS / IMPORT / EXPORT ---------------- */
 
     function openModal(title, render, add) {
       const modal = document.createElement('div');
@@ -1485,125 +1795,11 @@
       setTimeout(() => modal.remove(), 180);
     }
 
-    function openSets(i) {
-      ce = i;
-      temp = [...(data[cw].exercises[i].sets || [])];
-      openModal('Подходы', renderSets, addSet);
-    }
-
-    function renderSets() {
-      const list = document.querySelector('.modal #list');
-      if (!list) return;
-
-      list.innerHTML = '';
-
-      temp.forEach((s, i) => {
-        const d = document.createElement('div');
-        d.className = 'modalListItem';
-        d.innerHTML = `
-          <span>${escapeHtml(s)}</span>
-          <button onclick="delSet(${i})">🗑</button>
-        `;
-        list.appendChild(d);
-      });
-    }
-
-    function addSet() {
-      const w = document.querySelector('.modal #w')?.value;
-      const r = document.querySelector('.modal #r')?.value;
-      if (!w || !r) return;
-
-      temp.push(w + 'x' + r);
-      data[cw].exercises[ce].sets = [...temp];
-      save();
-
-      renderSets();
-      openW(cw);
-    }
-
-    function delSet(i) {
-      temp.splice(i, 1);
-      data[cw].exercises[ce].sets = [...temp];
-      save();
-
-      renderSets();
-      openW(cw);
-    }
-
-    function newRes(i) {
-      ce = i;
-      temp = [...(data[cw].exercises[i].newSets || [])];
-      openModal('Новый результат', renderTemp, addTemp);
-    }
-
-    function renderTemp() {
-      const list = document.querySelector('.modal #list');
-      if (!list) return;
-
-      list.innerHTML = '';
-
-      temp.forEach((s, i) => {
-        const d = document.createElement('div');
-        d.className = 'modalListItem';
-        d.innerHTML = `
-          <span>${escapeHtml(s)}</span>
-          <button onclick="delTemp(${i})">🗑</button>
-        `;
-        list.appendChild(d);
-      });
-    }
-
-    function addTemp() {
-      const w = document.querySelector('.modal #w')?.value;
-      const r = document.querySelector('.modal #r')?.value;
-      if (!w || !r) return;
-
-      temp.push(w + 'x' + r);
-      data[cw].exercises[ce].newSets = [...temp];
-      save();
-
-      renderTemp();
-      openW(cw);
-    }
-
-    function delTemp(i) {
-      temp.splice(i, 1);
-
-      if (temp.length === 0) {
-        delete data[cw].exercises[ce].newSets;
-      } else {
-        data[cw].exercises[ce].newSets = [...temp];
-      }
-
-      save();
-      renderTemp();
-      openW(cw);
-    }
-
-    function saveRes(i) {
-      const ex = data[cw].exercises[i];
-      if (!ex.newSets || !ex.newSets.length) return;
-
-      ex.sets = [...ex.newSets];
-      delete ex.newSets;
-
-      save();
-      openW(cw);
-    }
-
-    function toggleInfo(i) {
-      data[cw].exercises[i].showInfo = !data[cw].exercises[i].showInfo;
-      save();
-      openW(cw);
-    }
-
-    function saveInfo(i) {
-      const editor = document.getElementById('info' + i);
-      if (!editor) return;
-
-      data[cw].exercises[i].info = editor.innerHTML;
-      save();
-      openW(cw);
+    function closeTopModal() {
+      const modal = document.querySelector('.modal');
+      if (!modal) return;
+      modal.classList.remove('show');
+      setTimeout(() => modal.remove(), 180);
     }
 
     function exportData() {
@@ -1637,8 +1833,7 @@
         const reader = new FileReader();
         reader.onload = function (event) {
           try {
-            const content = event.target.result;
-            const parsed = JSON.parse(content);
+            const parsed = JSON.parse(event.target.result);
 
             if (Array.isArray(parsed)) {
               data = parsed;
