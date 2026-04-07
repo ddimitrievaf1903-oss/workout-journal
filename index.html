@@ -45,9 +45,9 @@
     }
 
     .container {
-      max-width: 430px;
-      margin: 0 auto;
-      padding: 14px 12px calc(var(--nav-h) + 26px + env(safe-area-inset-bottom));
+      max-width: 460px;
+      margin: auto;
+      padding: 14px 14px calc(var(--nav-h) + 26px + env(safe-area-inset-bottom));
       min-height: 100dvh;
     }
 
@@ -60,10 +60,6 @@
       -webkit-backdrop-filter: blur(14px);
       padding-bottom: 10px;
       margin-bottom: 6px;
-    }
-
-    .headerCenter {
-      text-align: center;
     }
 
     .title {
@@ -80,7 +76,7 @@
 
     .card {
       background: var(--card);
-      border-radius: 20px;
+      border-radius: var(--radius);
       padding: 14px;
       margin-bottom: 12px;
       box-shadow: var(--shadow);
@@ -151,10 +147,6 @@
       align-items: center;
     }
 
-    .centerRow {
-      justify-content: center;
-    }
-
     input, select, textarea {
       width: 100%;
       min-height: 44px;
@@ -197,7 +189,6 @@
       gap: 10px;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: center;
       margin-top: 10px;
     }
 
@@ -214,14 +205,6 @@
     .colorOption.active {
       border-color: #111;
       transform: scale(1.06);
-    }
-
-    .folderColorDot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex: 0 0 12px;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
     }
 
     .exercise-img {
@@ -268,7 +251,6 @@
       gap: 6px;
       margin: 10px 0;
       flex-wrap: wrap;
-      justify-content: center;
     }
 
     .toolbar button,
@@ -312,7 +294,7 @@
 
     .modalBox {
       width: 100%;
-      max-width: 430px;
+      max-width: 460px;
       max-height: 90dvh;
       overflow: auto;
       background: #fff;
@@ -342,7 +324,7 @@
 
     .calendarWrap {
       background: #fff;
-      border-radius: 20px;
+      border-radius: 18px;
       padding: 12px;
       box-shadow: var(--shadow);
     }
@@ -420,7 +402,7 @@
     .notesHeader {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       gap: 8px;
       margin-bottom: 12px;
     }
@@ -437,7 +419,6 @@
       gap: 8px;
       flex-wrap: wrap;
       margin-bottom: 10px;
-      justify-content: center;
     }
 
     .chip {
@@ -450,9 +431,6 @@
       cursor: pointer;
       min-height: 38px;
       transition: transform .12s ease, opacity .12s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
     }
 
     .chip:active { transform: scale(.992); }
@@ -500,8 +478,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255,59,48,.10);
-      color: rgba(255,59,48,.52);
+      background: rgba(255,59,48,.14);
+      color: rgba(255,59,48,.65);
       font-size: 18px;
       user-select: none;
     }
@@ -573,9 +551,7 @@
     }
 
     .notePill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      display: inline-block;
       background: #f0f1f5;
       color: #444;
       font-size: 12px;
@@ -633,7 +609,7 @@
     }
 
     .bottomNavInner {
-      max-width: 430px;
+      max-width: 460px;
       margin: 0 auto;
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -675,10 +651,6 @@
       .notesFab {
         bottom: 24px;
       }
-      .container,
-      .bottomNavInner {
-        max-width: 460px;
-      }
     }
   </style>
 </head>
@@ -719,7 +691,6 @@
     let notesSearch = '';
     let noteAutosaveTimer = null;
     let currentlySwipedId = null;
-    let notesFolderDraftColor = '#8e8e93';
 
     const workoutColors = [
       '#007aff',
@@ -730,19 +701,6 @@
       '#ff9500',
       '#5ac8fa',
       '#8e8e93'
-    ];
-
-    const folderColors = [
-      '#007aff',
-      '#34c759',
-      '#ff3b30',
-      '#ffcc00',
-      '#af52de',
-      '#ff9500',
-      '#5ac8fa',
-      '#8e8e93',
-      '#ff2d55',
-      '#30b0c7'
     ];
 
     function saveLocal() {
@@ -825,19 +783,12 @@
 
     function ensureDefaultFolder() {
       if (!notesFolders.length) {
-        notesFolders = [{ id: 'fld_default', name: 'Личное', color: '#8e8e93', createdAt: Date.now() }];
+        notesFolders = [{ id: 'fld_default', name: 'Личное', createdAt: Date.now() }];
       }
     }
 
     function migrateNotesSystem() {
       ensureDefaultFolder();
-      notesFolders = notesFolders.map(f => ({
-        id: f.id || ('fld_' + Math.random().toString(36).slice(2) + Date.now().toString(36)),
-        name: f.name || 'Папка',
-        color: f.color || '#8e8e93',
-        createdAt: f.createdAt || Date.now()
-      }));
-
       notesData = notesData.map(note => ({
         id: note.id || ('n_' + Math.random().toString(36).slice(2) + Date.now().toString(36)),
         title: note.title || '',
@@ -851,16 +802,8 @@
       }));
     }
 
-    function folderById(folderId) {
-      return notesFolders.find(f => f.id === folderId);
-    }
-
     function folderNameById(folderId) {
-      return folderById(folderId)?.name || 'Без папки';
-    }
-
-    function folderColorById(folderId) {
-      return folderById(folderId)?.color || '#8e8e93';
+      return notesFolders.find(f => f.id === folderId)?.name || 'Без папки';
     }
 
     function allTags() {
@@ -924,9 +867,9 @@
     function renderTopHeader(title, right='') {
       return `
         <div class="stickyTop">
-          <div style="display:flex;align-items:center;justify-content:center;gap:8px;position:relative">
-            <h1 class="title headerCenter">${title}</h1>
-            <div style="position:absolute;right:0;top:50%;transform:translateY(-50%)">${right}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <h1 class="title">${title}</h1>
+            ${right}
           </div>
         </div>
       `;
@@ -960,47 +903,6 @@
           `).join('')}
         </div>
       `;
-    }
-
-    function renderFolderColorPicker(selected, handlerName, folderId = null) {
-      return `
-        <div class="colorPicker">
-          ${folderColors.map(color => `
-            <div
-              class="colorOption ${selected === color ? 'active' : ''}"
-              style="background:${color}"
-              onclick="${folderId ? `${handlerName}('${folderId}','${color}')` : `${handlerName}('${color}')`}"
-            ></div>
-          `).join('')}
-        </div>
-      `;
-    }
-
-    function setFolderDraftColor(color) {
-      notesFolderDraftColor = color;
-      renderNotes();
-    }
-
-    function setFolderColor(folderId, color) {
-      const folder = folderById(folderId);
-      if (!folder) return;
-      folder.color = color;
-      save();
-      closeTopModal();
-      renderNotes();
-    }
-
-    function openFolderColorEditor(folderId) {
-      const folder = folderById(folderId);
-      if (!folder) return;
-      openCustomModal(`
-        <div class="title" style="font-size:20px;margin-bottom:8px">Цвет папки</div>
-        <div class="colorPreviewRow centerRow" style="justify-content:center;margin-bottom:8px">
-          <div class="folderColorDot" style="background:${folder.color || '#8e8e93'}"></div>
-          <b>${escapeHtml(folder.name)}</b>
-        </div>
-        ${renderFolderColorPicker(folder.color || '#8e8e93', 'setFolderColor', folderId)}
-      `);
     }
 
     /* ------------- Generic swipe ------------- */
@@ -1161,10 +1063,7 @@
         <div class="folderWrap">
           <button class="chip ${notesPrefs.currentFolderId === 'all' ? 'active' : ''}" onclick="setNotesFolder('all')">Все папки</button>
           ${notesFolders.map(f => `
-            <button class="chip ${notesPrefs.currentFolderId === f.id ? 'active' : ''}" onclick="setNotesFolder('${f.id}')">
-              <span class="folderColorDot" style="background:${f.color || '#8e8e93'}"></span>
-              <span>${escapeHtml(f.name)}</span>
-            </button>
+            <button class="chip ${notesPrefs.currentFolderId === f.id ? 'active' : ''}" onclick="setNotesFolder('${f.id}')">${escapeHtml(f.name)}</button>
           `).join('')}
         </div>
 
@@ -1181,16 +1080,11 @@
               <input id="newFolderName" placeholder="Новая папка" style="flex:1">
               <button onclick="createFolder()">Создать</button>
             </div>
-            <div class="helper" style="margin-top:8px;text-align:center">Цвет новой папки</div>
-            ${renderFolderColorPicker(notesFolderDraftColor, 'setFolderDraftColor')}
             ${notesFolders.map(f => swipeWrap(
               'folder_' + f.id,
               `
                 <div class="folderManageRow">
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <div class="folderColorDot" style="background:${f.color || '#8e8e93'};cursor:pointer" onclick="openFolderColorEditor('${f.id}')"></div>
-                    <span>${escapeHtml(f.name)}</span>
-                  </div>
+                  <span>${escapeHtml(f.name)}</span>
                   <div class="row" style="margin-top:0">
                     <button class="small secondary editBtn" onclick="renameFolder('${f.id}')">✏️</button>
                   </div>
@@ -1204,7 +1098,7 @@
         <div class="${notesPrefs.view === 'grid' ? 'notesGrid' : 'notesList'}" id="notesContainer">
           ${items.length ? items.map(note => noteCardHtml(note)).join('') : `
             <div class="card">
-              <div class="helper" style="text-align:center">Нет заметок по текущим фильтрам.</div>
+              <div class="helper">Нет заметок по текущим фильтрам.</div>
             </div>
           `}
         </div>
@@ -1238,10 +1132,7 @@
             <div class="noteCardTitle">${escapeHtml(note.title || 'Без названия')}</div>
             <div class="noteCardPreview">${escapeHtml(stripHtml(note.content || ''))}</div>
             <div class="noteCardMeta">
-              <span class="notePill">
-                <span class="folderColorDot" style="background:${folderColorById(note.folderId)}"></span>
-                <span>${escapeHtml(folderNameById(note.folderId))}</span>
-              </span>
+              <span class="notePill">${escapeHtml(folderNameById(note.folderId))}</span>
               ${(note.tags || []).slice(0,3).map(t => `<span class="notePill">#${escapeHtml(t)}</span>`).join('')}
               <span>${escapeHtml(formatDateTime(note.updatedAt))}</span>
             </div>
@@ -1259,18 +1150,16 @@
       notesFolders.push({
         id: 'fld_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
         name,
-        color: notesFolderDraftColor || '#8e8e93',
         createdAt: Date.now()
       });
 
       input.value = '';
-      notesFolderDraftColor = '#8e8e93';
       save();
       renderNotes();
     }
 
     function renameFolder(folderId) {
-      const folder = folderById(folderId);
+      const folder = notesFolders.find(f => f.id === folderId);
       if (!folder) return;
       const name = prompt('Название папки', folder.name);
       if (!name || !name.trim()) return;
@@ -1280,7 +1169,7 @@
     }
 
     function deleteFolder(folderId) {
-      const folder = folderById(folderId);
+      const folder = notesFolders.find(f => f.id === folderId);
       if (!folder) return;
 
       const fallback = notesFolders.find(f => f.id !== folderId);
@@ -1302,7 +1191,6 @@
       }
 
       save();
-      closeTopModal();
       renderNotes();
     }
 
@@ -1339,24 +1227,21 @@
       if (!note) return;
 
       openCustomModal(`
-        <div class="title" style="font-size:22px;margin-bottom:8px;text-align:center">${escapeHtml(note.title || 'Без названия')}</div>
-        <div class="row centerRow" style="margin-top:0">
-          <span class="notePill">
-            <span class="folderColorDot" style="background:${folderColorById(note.folderId)}"></span>
-            <span>${escapeHtml(folderNameById(note.folderId))}</span>
-          </span>
+        <div class="title" style="font-size:22px;margin-bottom:8px">${escapeHtml(note.title || 'Без названия')}</div>
+        <div class="row" style="margin-top:0">
+          <span class="notePill">${escapeHtml(folderNameById(note.folderId))}</span>
           ${(note.tags || []).map(t => `<span class="notePill">#${escapeHtml(t)}</span>`).join('')}
         </div>
 
         <div class="noteReadBlock" style="margin-top:12px">${note.content || '<span class="helper">Пустая заметка</span>'}</div>
 
-        <div class="row centerRow">
+        <div class="row">
           <button class="green" onclick="openNoteEditor('${note.id}')">Редактировать</button>
           <button class="secondary" onclick="toggleFavoriteNote('${note.id}')">${note.favorite ? 'Убрать ★' : 'В избранное'}</button>
           <button class="secondary" onclick="togglePinNote('${note.id}')">${note.pinned ? 'Открепить' : 'Закрепить'}</button>
         </div>
 
-        <div class="helper" style="text-align:center">
+        <div class="helper">
           Создано: ${escapeHtml(formatDateTime(note.createdAt))}<br>
           Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}
         </div>
@@ -1381,7 +1266,7 @@
       };
 
       openCustomModal(`
-        <div class="title" style="font-size:20px;margin-bottom:10px;text-align:center">${noteId ? 'Редактирование' : 'Новая заметка'}</div>
+        <div class="title" style="font-size:20px;margin-bottom:10px">${noteId ? 'Редактирование' : 'Новая заметка'}</div>
 
         <input id="noteTitleInput" placeholder="Заголовок" value="${escapeHtml(note.title)}" oninput="queueNoteAutosave('${note.id}')">
 
@@ -1403,14 +1288,14 @@
 
         <div contenteditable="true" class="editor" id="noteContentEditor" oninput="queueNoteAutosave('${note.id}')">${note.content || ''}</div>
 
-        <div class="row centerRow">
+        <div class="row">
           <button class="green" onclick="saveNoteFromModal('${note.id}')">Сохранить</button>
           <button class="secondary" onclick="togglePinNoteFromEditor('${note.id}')">${note.pinned ? 'Открепить' : 'Закрепить'}</button>
           <button class="secondary" onclick="toggleFavoriteNoteFromEditor('${note.id}')">${note.favorite ? 'Убрать ★' : 'В избранное'}</button>
         </div>
 
-        <div class="helper" style="text-align:center">Автосохранение включено</div>
-        <div class="helper" style="text-align:center">
+        <div class="helper">Автосохранение включено</div>
+        <div class="helper">
           Создано: ${escapeHtml(formatDateTime(note.createdAt))}<br>
           Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}
         </div>
@@ -1534,7 +1419,7 @@
           <button onclick="addW()">Добавить</button>
         </div>
 
-        <div class="row centerRow">
+        <div class="row">
           <button class="green" onclick="exportData()">Экспорт</button>
           <button class="secondary" onclick="importData()">Импорт</button>
         </div>
@@ -1553,7 +1438,7 @@
               ></div>
               <b>${escapeHtml(w.name)}</b>
             </div>
-            <div class="row centerRow">
+            <div class="row">
               <button onclick="openW(${i})">Открыть</button>
               <button class="green small" onclick="done(${i})">✔</button>
               <button class="red small" onclick="undone(${i})">✖</button>
@@ -1620,8 +1505,8 @@
     function openWorkoutColorEditor(index) {
       const w = data[index];
       openCustomModal(`
-        <div class="title" style="font-size:20px;margin-bottom:8px;text-align:center">Изменить цвет</div>
-        <div class="colorPreviewRow centerRow" style="margin-bottom:8px;justify-content:center">
+        <div class="title" style="font-size:20px;margin-bottom:8px">Изменить цвет</div>
+        <div class="colorPreviewRow" style="margin-bottom:8px">
           <div class="workoutColorDot" style="background:${w.color || '#8e8e93'}"></div>
           <b>${escapeHtml(w.name)}</b>
         </div>
@@ -1664,14 +1549,12 @@
 
       app.innerHTML = `
         ${renderTopHeader(escapeHtml(w.name))}
-        <div class="row centerRow" style="margin-top:0">
-          <button class="secondary" onclick="home()">← Назад</button>
-        </div>
+        <button class="secondary" onclick="home()">← Назад</button>
         <div id="list"></div>
 
         <button class="bigBtn" onclick="addE('normal')">Добавить упражнение</button>
 
-        <div class="row centerRow">
+        <div class="row">
           <button onclick="addE('special')">Особое</button>
           <button class="green" onclick="addE('extra')">Доп</button>
         </div>
@@ -1712,7 +1595,7 @@
               <button onclick="fmt('underline')">U</button>
             </div>
             <div contenteditable="true" class="editor" id="info${i}">${e.info || ''}</div>
-            <div class="row centerRow">
+            <div class="row">
               <button onclick="saveInfo(${i})">Сохранить</button>
             </div>
           `
@@ -1727,7 +1610,7 @@
 
             ${setsHTML}
 
-            <div class="row centerRow">
+            <div class="row">
               <button onclick="openSets(${i})">Подходы</button>
               <button class="yellow" onclick="newRes(${i})">Новый результат</button>
               ${(e.newSets && e.newSets.length) ? `<button class="green" onclick="saveRes(${i})">Сохранить</button>` : ''}
@@ -1847,14 +1730,13 @@
       list.innerHTML = '';
 
       temp.forEach((s, i) => {
-        const d = document.createElement('div');
-        d.className = 'modalListItem';
-        d.innerHTML = `
-          <span>${escapeHtml(s)}</span>
-          <button class="small red" onclick="delTemp(${i})">🗑</button>
-        `;
-        list.appendChild(d);
+        list.insertAdjacentHTML('beforeend', swipeWrap(
+          `temp_${i}`,
+          `<div class="modalListItem"><span>${escapeHtml(s)}</span></div>`,
+          `delTemp(${i})`
+        ));
       });
+      attachSwipeables();
     }
 
     function addTemp() {
@@ -2038,7 +1920,7 @@
               `removeWorkoutFromDay('${key}', ${idx})`
             );
           }).join('')
-        : `<div class="helper" style="text-align:center">На этот день пока ничего не добавлено.</div>`;
+        : `<div class="helper">На этот день пока ничего не добавлено.</div>`;
 
       const options = data.length
         ? data.map((w, i) => `
@@ -2050,13 +1932,13 @@
               <button onclick="addWorkoutToDay('${key}', ${i})">Добавить</button>
             </div>
           `).join('')
-        : `<div class="helper" style="text-align:center">Сначала добавь тренировки.</div>`;
+        : `<div class="helper">Сначала добавь тренировки.</div>`;
 
       openCustomModal(`
-        <div class="title" style="font-size:20px;margin-bottom:8px;text-align:center">День ${key}</div>
-        <div class="helper" style="text-align:center">Добавленные тренировки</div>
+        <div class="title" style="font-size:20px;margin-bottom:8px">День ${key}</div>
+        <div class="helper">Добавленные тренировки</div>
         ${existingHtml}
-        <div class="helper" style="margin-top:12px;text-align:center">Выбрать тренировку</div>
+        <div class="helper" style="margin-top:12px">Выбрать тренировку</div>
         ${options}
       `);
       attachSwipeables();
@@ -2112,7 +1994,7 @@
             <button id="addBtn">+</button>
           </div>
 
-          <div class="row centerRow">
+          <div class="row">
             <button class="secondary" onclick="closeModal(this)">Закрыть</button>
           </div>
         </div>
@@ -2158,7 +2040,7 @@
       const box = modal.querySelector('.modalBox');
       box.innerHTML = `
         ${html}
-        <div class="row centerRow">
+        <div class="row">
           <button class="secondary" onclick="closeModal(this)">Закрыть</button>
         </div>
       `;
