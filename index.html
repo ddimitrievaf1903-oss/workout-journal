@@ -22,7 +22,7 @@
       --soft2:#f8f8fa;
       --border:#d9d9de;
       --shadow:0 4px 10px rgba(0,0,0,0.05);
-      --shadow2:0 10px 24px rgba(0,0,0,0.12);
+      --shadow2:0 10px 22px rgba(0,0,0,0.10);
       --radius:18px;
       --nav-h:76px;
     }
@@ -47,7 +47,7 @@
     .container {
       max-width: 460px;
       margin: auto;
-      padding: 14px 14px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));
+      padding: 14px 14px calc(var(--nav-h) + 26px + env(safe-area-inset-bottom));
       min-height: 100dvh;
     }
 
@@ -55,7 +55,7 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      background: linear-gradient(to bottom, rgba(242,242,247,.98), rgba(242,242,247,.9));
+      background: linear-gradient(to bottom, rgba(242,242,247,.98), rgba(242,242,247,.90));
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       padding-bottom: 10px;
@@ -81,14 +81,14 @@
       margin-bottom: 12px;
       box-shadow: var(--shadow);
       position: relative;
-      transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+      transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease;
     }
 
-    .card:active { transform: scale(0.995); }
+    .card:active { transform: scale(0.998); }
 
     .card.dragging {
       opacity: .7;
-      transform: scale(1.02);
+      transform: scale(1.01);
       box-shadow: var(--shadow2);
     }
 
@@ -106,16 +106,25 @@
       cursor: pointer;
       font-size: 14px;
       font-weight: 600;
-      transition: transform .15s ease, opacity .15s ease, background .15s ease;
+      transition: transform .12s ease, opacity .12s ease, background .12s ease, filter .12s ease;
     }
 
-    button:active { transform: scale(0.98); }
+    button:active {
+      transform: scale(0.992);
+      filter: brightness(.985);
+    }
 
     .small {
-      min-height: 34px;
-      font-size: 12px;
-      padding: 6px 8px;
-      border-radius: 10px;
+      min-height: 30px;
+      font-size: 11px;
+      padding: 4px 7px;
+      border-radius: 9px;
+    }
+
+    .editBtn {
+      opacity: .8;
+      transform: scale(.78);
+      transform-origin: center;
     }
 
     .green { background: var(--green); }
@@ -190,12 +199,12 @@
       border: 2px solid transparent;
       cursor: pointer;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
-      transition: transform .14s ease;
+      transition: transform .12s ease;
     }
 
     .colorOption.active {
       border-color: #111;
-      transform: scale(1.08);
+      transform: scale(1.06);
     }
 
     .exercise-img {
@@ -356,10 +365,10 @@
       justify-content: space-between;
       cursor: pointer;
       border: 1px solid transparent;
-      transition: transform .14s ease, border-color .14s ease;
+      transition: transform .12s ease, border-color .12s ease;
     }
 
-    .dayCell:active { transform: scale(0.98); }
+    .dayCell:active { transform: scale(0.992); }
     .dayCell:hover { border-color: var(--border); }
     .dayCell.outsideMonth { opacity: .45; }
     .dayCell.today {
@@ -421,7 +430,10 @@
       font-size: 13px;
       cursor: pointer;
       min-height: 38px;
+      transition: transform .12s ease, opacity .12s ease;
     }
+
+    .chip:active { transform: scale(.992); }
 
     .chip.active {
       background: #111;
@@ -450,35 +462,34 @@
       gap: 10px;
     }
 
-    .noteSwipeWrap {
+    .swipeWrap {
       position: relative;
       overflow: hidden;
       border-radius: 18px;
+      margin-bottom: 12px;
     }
 
-    .noteSwipeActions {
+    .swipeAction {
       position: absolute;
-      inset: 0 0 0 auto;
-      width: 108px;
+      top: 0;
+      right: 0;
+      width: 82px;
+      height: 100%;
       display: flex;
-      align-items: stretch;
-      justify-content: stretch;
-      gap: 0;
-      z-index: 1;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,59,48,.14);
+      color: rgba(255,59,48,.65);
+      font-size: 18px;
+      user-select: none;
     }
 
-    .noteSwipeActions button {
-      border-radius: 0;
-      flex: 1;
-      min-height: 100%;
-      font-size: 16px;
-    }
-
-    .noteSwipeCard {
+    .swipeMain {
       position: relative;
       z-index: 2;
-      touch-action: pan-y;
+      transition: transform .16s ease;
       will-change: transform;
+      touch-action: pan-y;
     }
 
     .noteCard {
@@ -487,9 +498,10 @@
       padding: 14px;
       position: relative;
       box-shadow: var(--shadow);
-      transition: transform .18s ease, box-shadow .18s ease;
+      transition: transform .16s ease, box-shadow .16s ease;
       cursor: pointer;
       animation: noteFade .18s ease;
+      margin-bottom: 0;
     }
 
     @keyframes noteFade {
@@ -506,7 +518,7 @@
       font-size: 16px;
       font-weight: 700;
       margin-bottom: 6px;
-      padding-right: 110px;
+      padding-right: 84px;
       line-height: 1.3;
     }
 
@@ -571,6 +583,18 @@
       z-index: 40;
     }
 
+    .noteReadBlock {
+      font-size: 16px;
+      line-height: 1.65;
+      color: #222;
+      background: #fff;
+      border: 1px solid #ececef;
+      border-radius: 16px;
+      padding: 16px;
+      white-space: normal;
+      word-break: break-word;
+    }
+
     .bottomNav {
       position: fixed;
       left: 0;
@@ -624,6 +648,9 @@
         border-radius: 22px;
         transform: translateY(18px);
       }
+      .notesFab {
+        bottom: 24px;
+      }
     }
   </style>
 </head>
@@ -663,7 +690,7 @@
     let calendarCursor = new Date();
     let notesSearch = '';
     let noteAutosaveTimer = null;
-    let currentlySwipedNoteId = null;
+    let currentlySwipedId = null;
 
     const workoutColors = [
       '#007aff',
@@ -735,9 +762,7 @@
     }
 
     function normalizeTags(list) {
-      if (Array.isArray(list)) {
-        return list.map(t => String(t).trim()).filter(Boolean);
-      }
+      if (Array.isArray(list)) return list.map(t => String(t).trim()).filter(Boolean);
       return [];
     }
 
@@ -842,8 +867,10 @@
     function renderTopHeader(title, right='') {
       return `
         <div class="stickyTop">
-          <h1 class="title">${title}</h1>
-          ${right}
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <h1 class="title">${title}</h1>
+            ${right}
+          </div>
         </div>
       `;
     }
@@ -878,6 +905,76 @@
       `;
     }
 
+    /* ------------- Generic swipe ------------- */
+
+    function closeAllSwipes() {
+      document.querySelectorAll('.swipeMain').forEach(el => {
+        el.style.transform = 'translateX(0px)';
+      });
+      currentlySwipedId = null;
+    }
+
+    function attachSwipeables() {
+      document.querySelectorAll('.swipeMain').forEach(el => {
+        if (el.dataset.swipeReady === '1') return;
+        el.dataset.swipeReady = '1';
+
+        let startX = 0;
+        let currentX = 0;
+        let swiping = false;
+        const maxLeft = -82;
+        const id = el.dataset.swipeId;
+
+        el.addEventListener('touchstart', e => {
+          startX = e.touches[0].clientX;
+          currentX = 0;
+          swiping = true;
+          if (currentlySwipedId && currentlySwipedId !== id) closeAllSwipes();
+        }, { passive: true });
+
+        el.addEventListener('touchmove', e => {
+          if (!swiping) return;
+          const dx = e.touches[0].clientX - startX;
+          if (dx < 0) {
+            currentX = Math.max(maxLeft, dx);
+            el.style.transform = `translateX(${currentX}px)`;
+          } else if (currentlySwipedId === id) {
+            currentX = Math.min(0, maxLeft + dx);
+            el.style.transform = `translateX(${currentX}px)`;
+          }
+        }, { passive: true });
+
+        el.addEventListener('touchend', () => {
+          if (!swiping) return;
+          swiping = false;
+          if (currentX < -38) {
+            el.style.transform = `translateX(${maxLeft}px)`;
+            currentlySwipedId = id;
+          } else {
+            el.style.transform = `translateX(0px)`;
+            if (currentlySwipedId === id) currentlySwipedId = null;
+          }
+        });
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.swipeWrap') && currentlySwipedId) {
+        closeAllSwipes();
+      }
+    }, true);
+
+    function swipeWrap(id, content, deleteAction) {
+      return `
+        <div class="swipeWrap">
+          <div class="swipeAction" onclick="${deleteAction}">🗑</div>
+          <div class="swipeMain" data-swipe-id="${escapeHtml(id)}">
+            ${content}
+          </div>
+        </div>
+      `;
+    }
+
     /* ---------------- NOTES ---------------- */
 
     function setNotesView(view) {
@@ -903,7 +1000,7 @@
 
     function setNotesSearch(value) {
       notesSearch = value || '';
-      renderNotes();
+      renderNotes(true);
     }
 
     function filteredNotes() {
@@ -937,7 +1034,7 @@
       return items;
     }
 
-    function renderNotes() {
+    function renderNotes(preserveSearchFocus = false) {
       currentTab = 'notes';
       migrateNotesSystem();
       renderBottomNav();
@@ -948,15 +1045,13 @@
 
       app.innerHTML = `
         ${renderTopHeader('Заметки', `
-          <div class="notesHeader" style="justify-content:flex-end;margin-bottom:0">
-            <div class="viewSwitch">
-              <button class="${notesPrefs.view === 'grid' ? 'active' : 'secondary'}" onclick="setNotesView('grid')">▥</button>
-              <button class="${notesPrefs.view === 'list' ? 'active' : 'secondary'}" onclick="setNotesView('list')">☰</button>
-            </div>
+          <div class="viewSwitch">
+            <button class="${notesPrefs.view === 'grid' ? 'active' : 'secondary'}" onclick="setNotesView('grid')">▥</button>
+            <button class="${notesPrefs.view === 'list' ? 'active' : 'secondary'}" onclick="setNotesView('list')">☰</button>
           </div>
         `)}
 
-        <input class="notesSearch" placeholder="Поиск по заметкам" value="${escapeHtml(notesSearch)}" oninput="setNotesSearch(this.value)">
+        <input id="notesSearchInput" class="notesSearch" placeholder="Поиск по заметкам" value="${escapeHtml(notesSearch)}" oninput="setNotesSearch(this.value)">
 
         <div class="notesSegments">
           <button class="chip ${notesPrefs.section === 'all' ? 'active' : ''}" onclick="setNotesSection('all')">Все</button>
@@ -985,15 +1080,18 @@
               <input id="newFolderName" placeholder="Новая папка" style="flex:1">
               <button onclick="createFolder()">Создать</button>
             </div>
-            ${notesFolders.map(f => `
-              <div class="folderManageRow">
-                <span>${escapeHtml(f.name)}</span>
-                <div class="row" style="margin-top:0">
-                  <button class="small" onclick="renameFolder('${f.id}')">✏️</button>
-                  <button class="small red" onclick="deleteFolder('${f.id}')">🗑</button>
+            ${notesFolders.map(f => swipeWrap(
+              'folder_' + f.id,
+              `
+                <div class="folderManageRow">
+                  <span>${escapeHtml(f.name)}</span>
+                  <div class="row" style="margin-top:0">
+                    <button class="small secondary editBtn" onclick="renameFolder('${f.id}')">✏️</button>
+                  </div>
                 </div>
-              </div>
-            `).join('')}
+              `,
+              `deleteFolder('${f.id}')`
+            )).join('')}
           </div>
         ` : ''}
 
@@ -1008,97 +1106,40 @@
         <button class="notesFab" onclick="openNoteEditor()">+</button>
       `;
 
-      attachSwipeToNotes();
+      attachSwipeables();
+
+      if (preserveSearchFocus) {
+        requestAnimationFrame(() => {
+          const input = document.getElementById('notesSearchInput');
+          if (input) {
+            input.focus();
+            const len = input.value.length;
+            input.setSelectionRange(len, len);
+          }
+        });
+      }
     }
 
     function noteCardHtml(note) {
-      return `
-        <div class="noteSwipeWrap" data-note-wrap="${note.id}">
-          <div class="noteSwipeActions">
-            <button class="secondary" onclick="toggleFavoriteNote('${note.id}')">${note.favorite ? '★' : '☆'}</button>
-            <button class="red" onclick="deleteNote('${note.id}')">🗑</button>
-          </div>
-          <div class="noteSwipeCard" data-note-card="${note.id}">
-            <div class="noteCard" onclick="openNoteEditor('${note.id}')">
-              <div class="noteCardActions">
-                <button class="small secondary" onclick="event.stopPropagation();toggleFavoriteNote('${note.id}')">${note.favorite ? '★' : '☆'}</button>
-                <button class="small secondary" onclick="event.stopPropagation();togglePinNote('${note.id}')">${note.pinned ? '📌' : '📍'}</button>
-                <button class="small red" onclick="event.stopPropagation();deleteNote('${note.id}')">🗑</button>
-              </div>
-              <div class="noteCardTitle">${escapeHtml(note.title || 'Без названия')}</div>
-              <div class="noteCardPreview">${escapeHtml(stripHtml(note.content || ''))}</div>
-              <div class="noteCardMeta">
-                <span class="notePill">${escapeHtml(folderNameById(note.folderId))}</span>
-                ${(note.tags || []).slice(0,3).map(t => `<span class="notePill">#${escapeHtml(t)}</span>`).join('')}
-                <span>${escapeHtml(formatDateTime(note.updatedAt))}</span>
-              </div>
+      return swipeWrap(
+        'note_' + note.id,
+        `
+          <div class="noteCard" onclick="openNoteView('${note.id}')">
+            <div class="noteCardActions">
+              <button class="small secondary" onclick="event.stopPropagation();toggleFavoriteNote('${note.id}')">${note.favorite ? '★' : '☆'}</button>
+              <button class="small secondary" onclick="event.stopPropagation();togglePinNote('${note.id}')">${note.pinned ? '📌' : '📍'}</button>
+            </div>
+            <div class="noteCardTitle">${escapeHtml(note.title || 'Без названия')}</div>
+            <div class="noteCardPreview">${escapeHtml(stripHtml(note.content || ''))}</div>
+            <div class="noteCardMeta">
+              <span class="notePill">${escapeHtml(folderNameById(note.folderId))}</span>
+              ${(note.tags || []).slice(0,3).map(t => `<span class="notePill">#${escapeHtml(t)}</span>`).join('')}
+              <span>${escapeHtml(formatDateTime(note.updatedAt))}</span>
             </div>
           </div>
-        </div>
-      `;
-    }
-
-    function closeAllSwipes() {
-      document.querySelectorAll('[data-note-card]').forEach(el => {
-        el.style.transform = 'translateX(0px)';
-      });
-      currentlySwipedNoteId = null;
-    }
-
-    function attachSwipeToNotes() {
-      closeAllSwipes();
-
-      document.addEventListener('click', noteGlobalClickHandler, true);
-
-      document.querySelectorAll('[data-note-card]').forEach(card => {
-        let startX = 0;
-        let currentX = 0;
-        let swiping = false;
-        const maxLeft = -108;
-        const noteId = card.dataset.noteCard;
-
-        card.addEventListener('touchstart', e => {
-          startX = e.touches[0].clientX;
-          currentX = 0;
-          swiping = true;
-
-          if (currentlySwipedNoteId && currentlySwipedNoteId !== noteId) {
-            closeAllSwipes();
-          }
-        }, { passive: true });
-
-        card.addEventListener('touchmove', e => {
-          if (!swiping) return;
-          const dx = e.touches[0].clientX - startX;
-          if (dx < 0) {
-            currentX = Math.max(maxLeft, dx);
-            card.style.transform = `translateX(${currentX}px)`;
-          } else if (currentlySwipedNoteId === noteId) {
-            currentX = Math.min(0, maxLeft + dx);
-            card.style.transform = `translateX(${currentX}px)`;
-          }
-        }, { passive: true });
-
-        card.addEventListener('touchend', () => {
-          if (!swiping) return;
-          swiping = false;
-
-          if (currentX < -54) {
-            card.style.transform = `translateX(${maxLeft}px)`;
-            currentlySwipedNoteId = noteId;
-          } else {
-            card.style.transform = 'translateX(0px)';
-            if (currentlySwipedNoteId === noteId) currentlySwipedNoteId = null;
-          }
-        });
-      });
-    }
-
-    function noteGlobalClickHandler(e) {
-      const inside = e.target.closest('[data-note-card]') || e.target.closest('.noteSwipeActions');
-      if (!inside && currentlySwipedNoteId) {
-        closeAllSwipes();
-      }
+        `,
+        `deleteNote('${note.id}')`
+      );
     }
 
     function createFolder() {
@@ -1137,7 +1178,7 @@
         return;
       }
 
-      if (!confirm(`Удалить папку "${folder.name}"? Заметки будут перенесены в "${fallback.name}".`)) return;
+      if (!confirm(`Точно удалить папку "${folder.name}"? Заметки будут перенесены в "${fallback.name}".`)) return;
 
       notesData.forEach(n => {
         if (n.folderId === folderId) n.folderId = fallback.id;
@@ -1181,12 +1222,36 @@
       }, 450);
     }
 
+    function openNoteView(noteId) {
+      const note = notesData.find(n => n.id === noteId);
+      if (!note) return;
+
+      openCustomModal(`
+        <div class="title" style="font-size:22px;margin-bottom:8px">${escapeHtml(note.title || 'Без названия')}</div>
+        <div class="row" style="margin-top:0">
+          <span class="notePill">${escapeHtml(folderNameById(note.folderId))}</span>
+          ${(note.tags || []).map(t => `<span class="notePill">#${escapeHtml(t)}</span>`).join('')}
+        </div>
+
+        <div class="noteReadBlock" style="margin-top:12px">${note.content || '<span class="helper">Пустая заметка</span>'}</div>
+
+        <div class="row">
+          <button class="green" onclick="openNoteEditor('${note.id}')">Редактировать</button>
+          <button class="secondary" onclick="toggleFavoriteNote('${note.id}')">${note.favorite ? 'Убрать ★' : 'В избранное'}</button>
+          <button class="secondary" onclick="togglePinNote('${note.id}')">${note.pinned ? 'Открепить' : 'Закрепить'}</button>
+        </div>
+
+        <div class="helper">
+          Создано: ${escapeHtml(formatDateTime(note.createdAt))}<br>
+          Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}
+        </div>
+      `);
+    }
+
     function openNoteEditor(noteId = null) {
       migrateNotesSystem();
 
-      const existing = noteId
-        ? notesData.find(n => n.id === noteId)
-        : null;
+      const existing = noteId ? notesData.find(n => n.id === noteId) : null;
 
       const note = existing || {
         id: 'n_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
@@ -1201,7 +1266,7 @@
       };
 
       openCustomModal(`
-        <div class="title" style="font-size:20px;margin-bottom:10px">${noteId ? 'Заметка' : 'Новая заметка'}</div>
+        <div class="title" style="font-size:20px;margin-bottom:10px">${noteId ? 'Редактирование' : 'Новая заметка'}</div>
 
         <input id="noteTitleInput" placeholder="Заголовок" value="${escapeHtml(note.title)}" oninput="queueNoteAutosave('${note.id}')">
 
@@ -1240,7 +1305,10 @@
     function saveNoteFromModal(noteId, silent = false) {
       const title = document.getElementById('noteTitleInput')?.value?.trim() || '';
       const folderId = document.getElementById('noteFolderSelect')?.value || (notesFolders[0]?.id || 'fld_default');
-      const tags = normalizeTags((document.getElementById('noteTagsInput')?.value || '').split(','));
+      const tags = (document.getElementById('noteTagsInput')?.value || '')
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
       const content = document.getElementById('noteContentEditor')?.innerHTML || '';
 
       const existing = notesData.find(n => n.id === noteId);
@@ -1307,7 +1375,11 @@
       note.pinned = !note.pinned;
       note.updatedAt = Date.now();
       save();
-      renderNotes();
+      if (document.querySelector('.modal')) {
+        openNoteView(noteId);
+      } else {
+        renderNotes();
+      }
     }
 
     function toggleFavoriteNote(noteId) {
@@ -1316,13 +1388,18 @@
       note.favorite = !note.favorite;
       note.updatedAt = Date.now();
       save();
-      renderNotes();
+      if (document.querySelector('.modal')) {
+        openNoteView(noteId);
+      } else {
+        renderNotes();
+      }
     }
 
     function deleteNote(noteId) {
-      if (!confirm('Удалить заметку?')) return;
+      if (!confirm('Точно удалить заметку?')) return;
       notesData = notesData.filter(n => n.id !== noteId);
       save();
+      closeTopModal();
       renderNotes();
     }
 
@@ -1351,21 +1428,35 @@
       const list = document.getElementById('list');
 
       data.forEach((w, i) => {
-        const d = document.createElement('div');
-        d.className = 'card ' + (w.done ? 'done' : '');
-        d.draggable = true;
+        const content = `
+          <div class="card ${w.done ? 'done' : ''}" draggable="true">
+            <div class="colorPreviewRow">
+              <div
+                class="workoutColorDot"
+                style="background:${w.color || '#8e8e93'};cursor:pointer"
+                onclick="openWorkoutColorEditor(${i})"
+              ></div>
+              <b>${escapeHtml(w.name)}</b>
+            </div>
+            <div class="row">
+              <button onclick="openW(${i})">Открыть</button>
+              <button class="green small" onclick="done(${i})">✔</button>
+              <button class="red small" onclick="undone(${i})">✖</button>
+            </div>
+          </div>
+        `;
+        list.insertAdjacentHTML('beforeend', swipeWrap(`workout_${i}`, content, `deleteWorkout(${i})`));
+      });
 
+      attachSwipeables();
+
+      list.querySelectorAll('.card[draggable="true"]').forEach((d, i) => {
         d.ondragstart = () => {
           dragW = i;
           d.classList.add('dragging');
         };
-
-        d.ondragend = () => {
-          d.classList.remove('dragging');
-        };
-
+        d.ondragend = () => d.classList.remove('dragging');
         d.ondragover = (e) => e.preventDefault();
-
         d.ondrop = () => {
           if (dragW === null || dragW === i) return;
           const moved = data.splice(dragW, 1)[0];
@@ -1374,25 +1465,24 @@
           save();
           home();
         };
-
-        d.innerHTML = `
-          <div class="colorPreviewRow">
-            <div
-              class="workoutColorDot"
-              style="background:${w.color || '#8e8e93'};cursor:pointer"
-              onclick="openWorkoutColorEditor(${i})"
-            ></div>
-            <b>${escapeHtml(w.name)}</b>
-          </div>
-          <div class="row">
-            <button onclick="openW(${i})">Открыть</button>
-            <button class="green small" onclick="done(${i})">✔</button>
-            <button class="red small" onclick="undone(${i})">✖</button>
-          </div>
-        `;
-
-        list.appendChild(d);
       });
+    }
+
+    function deleteWorkout(i) {
+      const workout = data[i];
+      if (!workout) return;
+      if (!confirm(`Точно удалить тренировку "${workout.name}"?`)) return;
+
+      const workoutId = workout.id;
+      data.splice(i, 1);
+
+      Object.keys(calendarData).forEach(key => {
+        calendarData[key] = (calendarData[key] || []).filter(entry => entry.workoutId !== workoutId);
+        if (!calendarData[key].length) delete calendarData[key];
+      });
+
+      save();
+      home();
     }
 
     function addW() {
@@ -1428,9 +1518,11 @@
       if (!data[index]) return;
       data[index].color = color;
       save();
-      openWorkoutColorEditor(index);
+      closeTopModal();
       if (currentTab === 'calendar') {
         renderCalendar();
+      } else if (typeof cw === 'number') {
+        openW(cw);
       } else {
         home();
       }
@@ -1456,7 +1548,7 @@
       const app = document.getElementById('app');
 
       app.innerHTML = `
-        ${renderTopHeader(w.name)}
+        ${renderTopHeader(escapeHtml(w.name))}
         <button class="secondary" onclick="home()">← Назад</button>
         <div id="list"></div>
 
@@ -1471,31 +1563,6 @@
       const list = document.getElementById('list');
 
       w.exercises.forEach((e, i) => {
-        const d = document.createElement('div');
-        d.className = 'card' + (e.special ? ' special' : '') + (e.extra ? ' extra' : '');
-
-        d.draggable = true;
-
-        d.ondragstart = () => {
-          dragE = i;
-          d.classList.add('dragging');
-        };
-
-        d.ondragend = () => {
-          d.classList.remove('dragging');
-        };
-
-        d.ondragover = (ev) => ev.preventDefault();
-
-        d.ondrop = () => {
-          if (dragE === null || dragE === i) return;
-          const moved = w.exercises.splice(dragE, 1)[0];
-          w.exercises.splice(i, 0, moved);
-          dragE = null;
-          save();
-          openW(cw);
-        };
-
         let setsHTML = '';
         const max = Math.max((e.sets || []).length, (e.newSets || []).length);
 
@@ -1519,27 +1586,13 @@
           `;
         }
 
-        const infoClass = e.info ? 'yellowBg' : 'gray';
-
+        const infoClass = e.info ? 'yellowBg' : '';
         const infoBox = e.showInfo
           ? `
             <div class="toolbar">
               <button onclick="fmt('bold')">B</button>
               <button onclick="fmt('italic')">I</button>
               <button onclick="fmt('underline')">U</button>
-              <select onchange="fmt('fontName', this.value)">
-                <option value="">Шрифт</option>
-                <option value="Arial">Arial</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Courier New">Courier</option>
-                <option value="Verdana">Verdana</option>
-              </select>
-              <select onchange="fmt('fontSize', this.value)">
-                <option value="">Размер</option>
-                <option value="2">Мал.</option>
-                <option value="3">Сред.</option>
-                <option value="5">Круп.</option>
-              </select>
             </div>
             <div contenteditable="true" class="editor" id="info${i}">${e.info || ''}</div>
             <div class="row">
@@ -1548,27 +1601,55 @@
           `
           : '';
 
-        d.innerHTML = `
-          <b>${escapeHtml(e.name)}</b>
-          <button class="small" onclick="editE(${i})">✏️</button>
-          <button class="red small" onclick="delE(${i})">🗑</button>
+        const content = `
+          <div class="card ${e.special ? 'special' : ''} ${e.extra ? 'extra' : ''}" draggable="true">
+            <b>${escapeHtml(e.name)}</b>
+            <button class="small secondary editBtn" onclick="editE(${i})">✏️</button>
 
-          ${e.img ? `<img src="${escapeHtml(e.img)}" class="exercise-img">` : ''}
+            ${e.img ? `<img src="${escapeHtml(e.img)}" class="exercise-img">` : ''}
 
-          ${setsHTML}
+            ${setsHTML}
 
-          <div class="row">
-            <button onclick="openSets(${i})">Подходы</button>
-            <button class="yellow" onclick="newRes(${i})">Новый результат</button>
-            ${(e.newSets && e.newSets.length) ? `<button class="green" onclick="saveRes(${i})">Сохранить</button>` : ''}
+            <div class="row">
+              <button onclick="openSets(${i})">Подходы</button>
+              <button class="yellow" onclick="newRes(${i})">Новый результат</button>
+              ${(e.newSets && e.newSets.length) ? `<button class="green" onclick="saveRes(${i})">Сохранить</button>` : ''}
+            </div>
+
+            <div class="infoBtn ${infoClass}" onclick="toggleInfo(${i})">!</div>
+            ${infoBox}
           </div>
-
-          <div class="infoBtn ${infoClass}" onclick="toggleInfo(${i})">!</div>
-          ${infoBox}
         `;
-
-        list.appendChild(d);
+        list.insertAdjacentHTML('beforeend', swipeWrap(`exercise_${i}`, content, `deleteExercise(${i})`));
       });
+
+      attachSwipeables();
+
+      list.querySelectorAll('.card[draggable="true"]').forEach((d, idx) => {
+        d.ondragstart = () => {
+          dragE = idx;
+          d.classList.add('dragging');
+        };
+        d.ondragend = () => d.classList.remove('dragging');
+        d.ondragover = (e) => e.preventDefault();
+        d.ondrop = () => {
+          if (dragE === null || dragE === idx) return;
+          const moved = w.exercises.splice(dragE, 1)[0];
+          w.exercises.splice(idx, 0, moved);
+          dragE = null;
+          save();
+          openW(cw);
+        };
+      });
+    }
+
+    function deleteExercise(i) {
+      const ex = data[cw]?.exercises?.[i];
+      if (!ex) return;
+      if (!confirm(`Точно удалить упражнение "${ex.name}"?`)) return;
+      data[cw].exercises.splice(i, 1);
+      save();
+      openW(cw);
     }
 
     function addE(type = 'normal') {
@@ -1595,13 +1676,6 @@
       openW(cw);
     }
 
-    function delE(i) {
-      if (!confirm('Удалить упражнение?')) return;
-      data[cw].exercises.splice(i, 1);
-      save();
-      openW(cw);
-    }
-
     function openSets(i) {
       ce = i;
       temp = [...(data[cw].exercises[i].sets || [])];
@@ -1614,11 +1688,13 @@
       list.innerHTML = '';
 
       temp.forEach((s, i) => {
-        const d = document.createElement('div');
-        d.className = 'modalListItem';
-        d.innerHTML = `<span>${escapeHtml(s)}</span><button onclick="delSet(${i})">🗑</button>`;
-        list.appendChild(d);
+        list.insertAdjacentHTML('beforeend', swipeWrap(
+          `set_${i}`,
+          `<div class="modalListItem"><span>${escapeHtml(s)}</span></div>`,
+          `delSet(${i})`
+        ));
       });
+      attachSwipeables();
     }
 
     function addSet() {
@@ -1634,6 +1710,7 @@
     }
 
     function delSet(i) {
+      if (!confirm('Точно удалить подход?')) return;
       temp.splice(i, 1);
       data[cw].exercises[ce].sets = [...temp];
       save();
@@ -1653,11 +1730,13 @@
       list.innerHTML = '';
 
       temp.forEach((s, i) => {
-        const d = document.createElement('div');
-        d.className = 'modalListItem';
-        d.innerHTML = `<span>${escapeHtml(s)}</span><button onclick="delTemp(${i})">🗑</button>`;
-        list.appendChild(d);
+        list.insertAdjacentHTML('beforeend', swipeWrap(
+          `temp_${i}`,
+          `<div class="modalListItem"><span>${escapeHtml(s)}</span></div>`,
+          `delTemp(${i})`
+        ));
       });
+      attachSwipeables();
     }
 
     function addTemp() {
@@ -1673,6 +1752,7 @@
     }
 
     function delTemp(i) {
+      if (!confirm('Точно удалить новый результат?')) return;
       temp.splice(i, 1);
 
       if (temp.length === 0) {
@@ -1827,15 +1907,18 @@
         ? entries.map((entry, idx) => {
             const workout = data.find(w => w.id === entry.workoutId);
             if (!workout) return '';
-            return `
-              <div class="modalListItem">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <div class="workoutColorDot" style="background:${workout.color || '#8e8e93'}"></div>
-                  <span>${escapeHtml(workout.name)}</span>
+            return swipeWrap(
+              `cal_${key}_${idx}`,
+              `
+                <div class="modalListItem">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="workoutColorDot" style="background:${workout.color || '#8e8e93'}"></div>
+                    <span>${escapeHtml(workout.name)}</span>
+                  </div>
                 </div>
-                <button class="red" onclick="removeWorkoutFromDay('${key}', ${idx})">🗑</button>
-              </div>
-            `;
+              `,
+              `removeWorkoutFromDay('${key}', ${idx})`
+            );
           }).join('')
         : `<div class="helper">На этот день пока ничего не добавлено.</div>`;
 
@@ -1858,6 +1941,7 @@
         <div class="helper" style="margin-top:12px">Выбрать тренировку</div>
         ${options}
       `);
+      attachSwipeables();
     }
 
     function openDay(key) {
@@ -1883,11 +1967,10 @@
 
     function removeWorkoutFromDay(key, entryIndex) {
       if (!calendarData[key]) return;
-      calendarData[key].splice(entryIndex, 1);
+      if (!confirm('Точно удалить запись из календаря?')) return;
 
-      if (calendarData[key].length === 0) {
-        delete calendarData[key];
-      }
+      calendarData[key].splice(entryIndex, 1);
+      if (!calendarData[key].length) delete calendarData[key];
 
       save();
       renderDayModal(key);
