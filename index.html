@@ -163,7 +163,7 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       padding: 8px;
-      min-height: 80px;
+      min-height: 120px;
       background: #fff;
     }
 
@@ -223,18 +223,7 @@
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 14px;
-    }
-
-    textarea {
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      width: 100%;
       box-sizing: border-box;
-      resize: vertical;
-      min-height: 100px;
-      font-family: inherit;
     }
 
     .modalListItem {
@@ -394,7 +383,7 @@
       font-size: 16px;
       font-weight: 600;
       margin-bottom: 6px;
-      padding-right: 72px;
+      padding-right: 96px;
     }
 
     .notePreview {
@@ -424,7 +413,11 @@
 
     .searchInput {
       width: 100%;
-      box-sizing: border-box;
+    }
+
+    .noteEditorTitle {
+      width: 100%;
+      margin-bottom: 8px;
     }
   </style>
 </head>
@@ -468,4 +461,1003 @@
     function saveLocal() {
       localStorage.setItem('workouts', JSON.stringify(data));
       localStorage.setItem('calendarData', JSON.stringify(calendarData));
-     
+      localStorage.setItem('notesData', JSON.stringify(notesData));
+    }
+
+    function saveCloud() {
+      suppressNextSnapshot = true;
+      return db.collection("users").doc("main").set({
+        workouts: data,
+        calendarData: calendarData,
+        notesData: notesData,
+        updatedAt: Date.now()
+      }).catch((err) => {
+        suppressNextSnapshot = false;
+        console.error("Firebase save error:", err);
+      });
+    }
+
+    function save() {
+      saveLocal();
+      return saveCloud();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text ?? '';
+      return div.innerHTML;
+    }
+
+    function fmt(cmd, value = null) {
+      document.execCommand(cmd, false, value);
+    }
+
+    function stripHtml(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html || '';
+      return div.textContent || div.innerText || '';
+    }
+
+    db.collection("users").doc("main").onSnapshot(doc => {
+      if (!doc.exists) return;
+
+      if (suppressNextSnapshot) {
+        suppressNextSnapshot = false;
+        return;
+      }
+
+      const cloud = doc.data() || {};
+      data = cloud.workouts || [];
+      calendarData = cloud.calendarData || {};
+      notesData = cloud.notesData || [];
+
+      saveLocal();
+
+      if (currentTab === 'calendar') {
+        renderCalendar();
+      } else if (currentTab === 'notes') {
+        renderNotes();
+      } else if (typeof cw === "number" && data[cw]) {
+        openW(cw);
+      } else {
+        cw = null;
+        home();
+      }
+    }, err => {
+      console.error("Firebase sync error:", err);
+    });
+
+    function renderTabs() {
+      return `
+        <div class="tabs">
+          <button class="${currentTab === 'notes' ? 'activeTab' : 'secondary'}" onclick="showNotes()">Заметки</button>
+          <button class="${currentTab === 'workouts' ? 'activeTab' : 'secondary'}" onclick="showWorkouts()">Тренировки</button>
+          <button class="${currentTab === 'calendar' ? 'activeTab' : 'secondary'}" onclick="showCalendar()">Календарь</button>
+        </div>
+      `;
+    }
+
+    function showNotes() {
+      currentTab = 'notes';
+      renderNotes();
+    }
+
+    function showWorkouts() {
+      currentTab = 'workouts';
+      cw = null;
+      home();
+    }
+
+    function showCalendar() {
+      currentTab = 'calendar';
+      renderCalendar();
+    }
+
+    function renderColorPicker(selected, index = null) {
+      return `
+        <div class="colorPicker">
+          ${workoutColors.map(color => `
+            <div
+              class="colorOption ${selected === color ? 'active' : ''}"
+              style="background:${color}"
+              onclick="setWorkoutColor(${index}, '${color}')"
+            ></div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderNotes() {
+      currentTab = 'notes';
+      const app = document.getElementById('app');
+
+      const filtered = [...notesData]
+        .filter(n => {
+          const hay = (n.title || '') + ' ' + stripHtml(n.content || '');
+          return hay.toLowerCase().includes(notesSearch.toLowerCase());
+        })
+        .sort((a, b) => {
+          if (!!b.pinned !== !!a.pinned) return Number(b.pinned) - Number(a.pinned);
+          return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
+
+      app.innerHTML = `
+        ${renderTabs()}
+        <div class="title">Заметки</div>
+
+        <div class="row">
+          <input class="searchInput" id="notesSearch" placeholder="Поиск по заметкам" value="${escapeHtml(notesSearch)}" oninput="setNotesSearch(this.value)" />
+        </div>
+
+        <div class="row">
+          <button class="bigBtn" onclick="openNoteEditor()">Новая заметка</button>
+        </div>
+
+        <div id="notesList"></div>
+      `;
+
+      const list = document.getElementById('notesList');
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="card"><div class="emptyText">Пока нет заметок.</div></div>`;
+        return;
+      }
+
+      filtered.forEach(note => {
+        const d = document.createElement('div');
+        d.className = 'card';
+
+        d.innerHTML = `
+          <div class="noteTopActions">
+            <button class="small secondary" onclick="togglePinNote('${note.id}')">${note.pinned ? '📌' : '📍'}</button>
+            <button class="small" onclick="openNoteEditor('${note.id}')">✏️</button>
+            <button class="small red" onclick="deleteNote('${note.id}')">🗑</button>
+          </div>
+
+          ${note.pinned ? `<div class="pinBadge">Закреплено</div>` : ''}
+          <div class="noteTitle">${escapeHtml(note.title || 'Без названия')}</div>
+          <div class="notePreview">${escapeHtml(stripHtml(note.content || ''))}</div>
+        `;
+
+        d.onclick = (e) => {
+          if (e.target.closest('button')) return;
+          openNoteEditor(note.id);
+        };
+
+        list.appendChild(d);
+      });
+    }
+
+    function setNotesSearch(value) {
+      notesSearch = value || '';
+      renderNotes();
+    }
+
+    function openNoteEditor(noteId = null) {
+      const note = noteId
+        ? notesData.find(n => n.id === noteId)
+        : {
+            id: 'n_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
+            title: '',
+            content: '',
+            pinned: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          };
+
+      openCustomModal(`
+        <div class="title" style="font-size:18px;margin-bottom:8px">${noteId ? 'Редактировать заметку' : 'Новая заметка'}</div>
+
+        <input id="noteTitleInput" class="noteEditorTitle" placeholder="Заголовок" value="${escapeHtml(note.title)}" />
+
+        <div class="toolbar">
+          <button onclick="fmt('bold')">B</button>
+          <button onclick="fmt('italic')">I</button>
+          <button onclick="fmt('underline')">U</button>
+          <select onchange="fmt('fontName', this.value)">
+            <option value="">Шрифт</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier</option>
+            <option value="Verdana">Verdana</option>
+          </select>
+          <select onchange="fmt('fontSize', this.value)">
+            <option value="">Размер</option>
+            <option value="2">Мал.</option>
+            <option value="3">Сред.</option>
+            <option value="5">Круп.</option>
+          </select>
+        </div>
+
+        <div contenteditable="true" class="editor" id="noteContentEditor">${note.content || ''}</div>
+
+        <div class="row">
+          <button class="green" onclick="saveNoteFromModal('${note.id}')">Сохранить</button>
+        </div>
+      `);
+    }
+
+    function saveNoteFromModal(noteId) {
+      const title = document.getElementById('noteTitleInput')?.value?.trim() || '';
+      const content = document.getElementById('noteContentEditor')?.innerHTML || '';
+
+      const existing = notesData.find(n => n.id === noteId);
+
+      if (existing) {
+        existing.title = title || 'Без названия';
+        existing.content = content;
+        existing.updatedAt = Date.now();
+      } else {
+        notesData.push({
+          id: noteId,
+          title: title || 'Без названия',
+          content: content,
+          pinned: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+
+      save();
+      closeTopModal();
+      renderNotes();
+    }
+
+    function deleteNote(noteId) {
+      if (!confirm('Удалить заметку?')) return;
+      notesData = notesData.filter(n => n.id !== noteId);
+      save();
+      renderNotes();
+    }
+
+    function togglePinNote(noteId) {
+      const note = notesData.find(n => n.id === noteId);
+      if (!note) return;
+      note.pinned = !note.pinned;
+      note.updatedAt = Date.now();
+      save();
+      renderNotes();
+    }
+
+    function closeTopModal() {
+      const modal = document.querySelector('.modal');
+      if (!modal) return;
+      modal.classList.remove('show');
+      setTimeout(() => modal.remove(), 180);
+    }
+
+    function home() {
+      currentTab = 'workouts';
+      const app = document.getElementById('app');
+
+      app.innerHTML = `
+        ${renderTabs()}
+        <div class="title">Тренировки</div>
+        <div id="list"></div>
+
+        <div class="row">
+          <input id="nw" placeholder="Новая тренировка" style="flex:1" />
+          <button onclick="addW()">Добавить</button>
+        </div>
+
+        <div class="row">
+          <button class="green" onclick="exportData()">Экспорт</button>
+          <button class="secondary" onclick="importData()">Импорт</button>
+        </div>
+      `;
+
+      const list = document.getElementById('list');
+
+      data.forEach((w, i) => {
+        const d = document.createElement('div');
+        d.className = 'card ' + (w.done ? 'done' : '');
+        d.draggable = true;
+
+        d.ondragstart = () => {
+          dragW = i;
+          d.classList.add('dragging');
+        };
+
+        d.ondragend = () => {
+          d.classList.remove('dragging');
+        };
+
+        d.ondragover = (e) => e.preventDefault();
+
+        d.ondrop = () => {
+          if (dragW === null || dragW === i) return;
+          const moved = data.splice(dragW, 1)[0];
+          data.splice(i, 0, moved);
+          dragW = null;
+          save();
+          home();
+        };
+
+        d.innerHTML = `
+          <div class="colorPreviewRow">
+            <div
+              class="workoutColorDot"
+              style="background:${w.color || '#8e8e93'};cursor:pointer"
+              onclick="openWorkoutColorEditor(${i})"
+            ></div>
+            <b>${escapeHtml(w.name)}</b>
+          </div>
+          <div class="row">
+            <button onclick="openW(${i})">Открыть</button>
+            <button class="green small" onclick="done(${i})">✔</button>
+            <button class="red small" onclick="undone(${i})">✖</button>
+          </div>
+        `;
+
+        list.appendChild(d);
+      });
+    }
+
+    function addW() {
+      const input = document.getElementById('nw');
+      const v = input.value.trim();
+      if (!v) return;
+
+      data.push({
+        id: 'w_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
+        name: v,
+        color: '#8e8e93',
+        exercises: []
+      });
+
+      input.value = '';
+      save();
+      home();
+    }
+
+    function openWorkoutColorEditor(index) {
+      const w = data[index];
+      openCustomModal(`
+        <div class="title" style="font-size:18px;margin-bottom:8px">Изменить цвет</div>
+        <div class="colorPreviewRow" style="margin-bottom:8px">
+          <div class="workoutColorDot" style="background:${w.color || '#8e8e93'}"></div>
+          <b>${escapeHtml(w.name)}</b>
+        </div>
+        <div id="editWorkoutColorPicker">
+          ${renderColorPicker(w.color || '#8e8e93', index)}
+        </div>
+      `);
+    }
+
+    function setWorkoutColor(index, color) {
+      if (!data[index]) return;
+      data[index].color = color;
+      save();
+      openWorkoutColorEditor(index);
+      if (currentTab === 'calendar') {
+        renderCalendar();
+      } else {
+        home();
+      }
+    }
+
+    function done(i) {
+      data[i].done = true;
+      save();
+      home();
+    }
+
+    function undone(i) {
+      delete data[i].done;
+      save();
+      home();
+    }
+
+    function openW(i) {
+      currentTab = 'workouts';
+      cw = i;
+      const w = data[i];
+      const app = document.getElementById('app');
+
+      app.innerHTML = `
+        ${renderTabs()}
+        <button class="secondary" onclick="home()">← Назад</button>
+        <div class="title">${escapeHtml(w.name)}</div>
+        <div id="list"></div>
+
+        <button class="bigBtn" onclick="addE('normal')">Добавить упражнение</button>
+
+        <div class="row">
+          <button onclick="addE('special')">Особое</button>
+          <button class="green" onclick="addE('extra')">Доп</button>
+        </div>
+      `;
+
+      const list = document.getElementById('list');
+
+      w.exercises.forEach((e, i) => {
+        const d = document.createElement('div');
+        d.className =
+          'card' +
+          (e.special ? ' special' : '') +
+          (e.extra ? ' extra' : '');
+
+        d.draggable = true;
+
+        d.ondragstart = () => {
+          dragE = i;
+          d.classList.add('dragging');
+        };
+
+        d.ondragend = () => {
+          d.classList.remove('dragging');
+        };
+
+        d.ondragover = (ev) => ev.preventDefault();
+
+        d.ondrop = () => {
+          if (dragE === null || dragE === i) return;
+          const moved = w.exercises.splice(dragE, 1)[0];
+          w.exercises.splice(i, 0, moved);
+          dragE = null;
+          save();
+          openW(cw);
+        };
+
+        let setsHTML = '';
+        const max = Math.max((e.sets || []).length, (e.newSets || []).length);
+
+        for (let j = 0; j < max; j++) {
+          const l = e.sets?.[j] || '';
+          const r = e.newSets?.[j] || '';
+          let diff = '';
+
+          if (l && r) {
+            const lw = parseFloat(String(l).split('x')[0]) || 0;
+            const rw = parseFloat(String(r).split('x')[0]) || 0;
+
+            if (rw > lw) diff = '<span class="plus">▲</span>';
+            if (rw < lw) diff = '<span class="minus">▼</span>';
+          }
+
+          setsHTML += `
+            <div class="setRow">
+              <span>${l ? `Подход ${j + 1}: ${escapeHtml(l)}` : ''}</span>
+              <span>${escapeHtml(r)} ${diff}</span>
+            </div>
+          `;
+        }
+
+        const infoClass = e.info ? 'yellowBg' : 'gray';
+
+        const infoBox = e.showInfo
+          ? `
+            <div class="toolbar">
+              <button onclick="fmt('bold')">B</button>
+              <button onclick="fmt('italic')">I</button>
+              <button onclick="fmt('underline')">U</button>
+              <select onchange="fmt('fontName', this.value)">
+                <option value="">Шрифт</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Courier New">Courier</option>
+                <option value="Verdana">Verdana</option>
+              </select>
+              <select onchange="fmt('fontSize', this.value)">
+                <option value="">Размер</option>
+                <option value="2">Мал.</option>
+                <option value="3">Сред.</option>
+                <option value="5">Круп.</option>
+              </select>
+            </div>
+            <div contenteditable="true" class="editor" id="info${i}">${e.info || ''}</div>
+            <div class="row">
+              <button onclick="saveInfo(${i})">Сохранить</button>
+            </div>
+          `
+          : '';
+
+        d.innerHTML = `
+          <b>${escapeHtml(e.name)}</b>
+          <button class="small" onclick="editE(${i})">✏️</button>
+          <button class="red small" onclick="delE(${i})">🗑</button>
+
+          ${e.img ? `<img src="${escapeHtml(e.img)}" class="exercise-img">` : ''}
+
+          ${setsHTML}
+
+          <div class="row">
+            <button onclick="openSets(${i})">Подходы</button>
+            <button class="yellow" onclick="newRes(${i})">Новый результат</button>
+            ${(e.newSets && e.newSets.length)
+              ? `<button class="green" onclick="saveRes(${i})">Сохранить</button>`
+              : ''}
+          </div>
+
+          <div class="infoBtn ${infoClass}" onclick="toggleInfo(${i})">!</div>
+          ${infoBox}
+        `;
+
+        list.appendChild(d);
+      });
+    }
+
+    function addE(type = 'normal') {
+      data[cw].exercises.push({
+        name: 'Новое упражнение',
+        img: '',
+        sets: [],
+        special: type === 'special',
+        extra: type === 'extra'
+      });
+
+      save();
+      openW(cw);
+    }
+
+    function editE(i) {
+      const ex = data[cw].exercises[i];
+
+      const n = prompt('Название', ex.name);
+      if (!n) return;
+
+      const img = prompt('Фото', ex.img || '');
+
+      ex.name = n;
+      ex.img = img || '';
+
+      save();
+      openW(cw);
+    }
+
+    function delE(i) {
+      if (!confirm('Удалить упражнение?')) return;
+      data[cw].exercises.splice(i, 1);
+      save();
+      openW(cw);
+    }
+
+    function openModal(title, render, add) {
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+
+      modal.innerHTML = `
+        <div class="modalBox">
+          <b>${escapeHtml(title)}</b>
+          <div id="list"></div>
+
+          <div class="row">
+            <input id="w" placeholder="Вес" style="flex:1" />
+            <input id="r" placeholder="Повторы" style="flex:1" />
+            <button id="addBtn">+</button>
+          </div>
+
+          <div class="row">
+            <button class="secondary" onclick="closeModal(this)">Закрыть</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      requestAnimationFrame(() => {
+        modal.classList.add('show');
+      });
+
+      modal.querySelector('#addBtn').onclick = add;
+      render();
+    }
+
+    function openCustomModal(html) {
+      let modal = document.querySelector('.modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modalBox"></div>`;
+        document.body.appendChild(modal);
+        requestAnimationFrame(() => {
+          modal.classList.add('show');
+        });
+      }
+
+      const box = modal.querySelector('.modalBox');
+      box.innerHTML = `
+        ${html}
+        <div class="row">
+          <button class="secondary" onclick="closeModal(this)">Закрыть</button>
+        </div>
+      `;
+    }
+
+    function closeModal(btn) {
+      const modal = btn.closest('.modal');
+      if (!modal) return;
+      modal.classList.remove('show');
+      setTimeout(() => modal.remove(), 180);
+    }
+
+    function openSets(i) {
+      ce = i;
+      temp = [...(data[cw].exercises[i].sets || [])];
+      openModal('Подходы', renderSets, addSet);
+    }
+
+    function renderSets() {
+      const list = document.querySelector('.modal #list');
+      if (!list) return;
+
+      list.innerHTML = '';
+
+      temp.forEach((s, i) => {
+        const d = document.createElement('div');
+        d.className = 'modalListItem';
+        d.innerHTML = `
+          <span>${escapeHtml(s)}</span>
+          <button onclick="delSet(${i})">🗑</button>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    function addSet() {
+      const w = document.querySelector('.modal #w')?.value;
+      const r = document.querySelector('.modal #r')?.value;
+      if (!w || !r) return;
+
+      temp.push(w + 'x' + r);
+      data[cw].exercises[ce].sets = [...temp];
+      save();
+
+      renderSets();
+      openW(cw);
+    }
+
+    function delSet(i) {
+      temp.splice(i, 1);
+      data[cw].exercises[ce].sets = [...temp];
+      save();
+
+      renderSets();
+      openW(cw);
+    }
+
+    function newRes(i) {
+      ce = i;
+      temp = [...(data[cw].exercises[i].newSets || [])];
+      openModal('Новый результат', renderTemp, addTemp);
+    }
+
+    function renderTemp() {
+      const list = document.querySelector('.modal #list');
+      if (!list) return;
+
+      list.innerHTML = '';
+
+      temp.forEach((s, i) => {
+        const d = document.createElement('div');
+        d.className = 'modalListItem';
+        d.innerHTML = `
+          <span>${escapeHtml(s)}</span>
+          <button onclick="delTemp(${i})">🗑</button>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    function addTemp() {
+      const w = document.querySelector('.modal #w')?.value;
+      const r = document.querySelector('.modal #r')?.value;
+      if (!w || !r) return;
+
+      temp.push(w + 'x' + r);
+      data[cw].exercises[ce].newSets = [...temp];
+      save();
+
+      renderTemp();
+      openW(cw);
+    }
+
+    function delTemp(i) {
+      temp.splice(i, 1);
+
+      if (temp.length === 0) {
+        delete data[cw].exercises[ce].newSets;
+      } else {
+        data[cw].exercises[ce].newSets = [...temp];
+      }
+
+      save();
+      renderTemp();
+      openW(cw);
+    }
+
+    function saveRes(i) {
+      const ex = data[cw].exercises[i];
+      if (!ex.newSets || !ex.newSets.length) return;
+
+      ex.sets = [...ex.newSets];
+      delete ex.newSets;
+
+      save();
+      openW(cw);
+    }
+
+    function toggleInfo(i) {
+      data[cw].exercises[i].showInfo = !data[cw].exercises[i].showInfo;
+      save();
+      openW(cw);
+    }
+
+    function saveInfo(i) {
+      const editor = document.getElementById('info' + i);
+      if (!editor) return;
+
+      data[cw].exercises[i].info = editor.innerHTML;
+      save();
+      openW(cw);
+    }
+
+    function exportData() {
+      const payload = {
+        workouts: data,
+        calendarData: calendarData,
+        notesData: notesData
+      };
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'workouts.json';
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+
+      input.onchange = function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          try {
+            const content = event.target.result;
+            const parsed = JSON.parse(content);
+
+            if (Array.isArray(parsed)) {
+              data = parsed;
+              calendarData = {};
+              notesData = [];
+            } else {
+              data = parsed.workouts || [];
+              calendarData = parsed.calendarData || {};
+              notesData = parsed.notesData || [];
+            }
+
+            ensureWorkoutIds();
+            save();
+            renderNotes();
+          } catch (err) {
+            alert('Ошибка файла');
+          }
+        };
+
+        reader.readAsText(file);
+      };
+
+      input.click();
+    }
+
+    function formatDayKey(y, m, d) {
+      const safeDate = new Date(y, m, d);
+      const yy = safeDate.getFullYear();
+      const mm = String(safeDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(safeDate.getDate()).padStart(2, '0');
+      return `${yy}-${mm}-${dd}`;
+    }
+
+    function monthTitle(date) {
+      const months = [
+        'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+      ];
+      return `${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    function changeMonth(delta) {
+      calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+      renderCalendar();
+    }
+
+    function buildDayDots(entries) {
+      return entries.map(entry => {
+        const workout = data.find(w => w.id === entry.workoutId);
+        if (!workout) return '';
+        return `<div class="dayDot" style="background:${workout.color || '#8e8e93'}"></div>`;
+      }).join('');
+    }
+
+    function renderCalendar() {
+      currentTab = 'calendar';
+      const app = document.getElementById('app');
+
+      const year = calendarCursor.getFullYear();
+      const month = calendarCursor.getMonth();
+
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month + 1, 0);
+
+      let firstWeekDay = first.getDay();
+      if (firstWeekDay === 0) firstWeekDay = 7;
+      const leadingDays = firstWeekDay - 1;
+
+      const daysInMonth = last.getDate();
+      const prevMonthLast = new Date(year, month, 0).getDate();
+
+      const today = new Date();
+      const todayKey = formatDayKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+      let cells = '';
+
+      const weekLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+      const weekHeader = weekLabels.map(d => `<div class="weekday">${d}</div>`).join('');
+
+      for (let i = leadingDays - 1; i >= 0; i--) {
+        const day = prevMonthLast - i;
+        const prevKey = formatDayKey(year, month - 1, day);
+        const prevEntries = calendarData[prevKey] || [];
+        const prevDots = buildDayDots(prevEntries);
+
+        cells += `
+          <div class="dayCell outsideMonth" onclick="openDay('${prevKey}')">
+            <div class="dayNumber">${day}</div>
+            <div class="dayDots">${prevDots}</div>
+          </div>
+        `;
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const key = formatDayKey(year, month, day);
+        const entries = calendarData[key] || [];
+        const dots = buildDayDots(entries);
+        const todayClass = key === todayKey ? ' today' : '';
+
+        cells += `
+          <div class="dayCell${todayClass}" onclick="openDay('${key}')">
+            <div class="dayNumber">${day}</div>
+            <div class="dayDots">${dots}</div>
+          </div>
+        `;
+      }
+
+      const used = leadingDays + daysInMonth;
+      const trailing = used % 7 === 0 ? 0 : 7 - (used % 7);
+
+      for (let day = 1; day <= trailing; day++) {
+        const nextKey = formatDayKey(year, month + 1, day);
+        const nextEntries = calendarData[nextKey] || [];
+        const nextDots = buildDayDots(nextEntries);
+
+        cells += `
+          <div class="dayCell outsideMonth" onclick="openDay('${nextKey}')">
+            <div class="dayNumber">${day}</div>
+            <div class="dayDots">${nextDots}</div>
+          </div>
+        `;
+      }
+
+      app.innerHTML = `
+        ${renderTabs()}
+        <div class="title">Календарь</div>
+
+        <div class="calendarWrap">
+          <div class="calendarHeader">
+            <button class="secondary" onclick="changeMonth(-1)">←</button>
+            <div class="calendarTitle">${monthTitle(calendarCursor)}</div>
+            <button class="secondary" onclick="changeMonth(1)">→</button>
+          </div>
+
+          <div class="calendarGrid">
+            ${weekHeader}
+            ${cells}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDayModal(key) {
+      const entries = calendarData[key] || [];
+
+      const existingHtml = entries.length
+        ? entries.map((entry, idx) => {
+            const workout = data.find(w => w.id === entry.workoutId);
+            if (!workout) return '';
+            return `
+              <div class="modalListItem">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="workoutColorDot" style="background:${workout.color || '#8e8e93'}"></div>
+                  <span>${escapeHtml(workout.name)}</span>
+                </div>
+                <button class="red" onclick="removeWorkoutFromDay('${key}', ${idx})">🗑</button>
+              </div>
+            `;
+          }).join('')
+        : `<div class="emptyText">На этот день пока ничего не добавлено.</div>`;
+
+      const options = data.length
+        ? data.map((w, i) => `
+            <div class="modalListItem">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="workoutColorDot" style="background:${w.color || '#8e8e93'}"></div>
+                <span>${escapeHtml(w.name)}</span>
+              </div>
+              <button onclick="addWorkoutToDay('${key}', ${i})">Добавить</button>
+            </div>
+          `).join('')
+        : `<div class="emptyText">Сначала добавь тренировки в листе «Тренировки».</div>`;
+
+      openCustomModal(`
+        <div class="title" style="font-size:18px;margin-bottom:8px">День ${key}</div>
+        <div class="modalSectionTitle">Добавленные тренировки</div>
+        ${existingHtml}
+        <div class="modalSectionTitle">Выбрать тренировку</div>
+        ${options}
+      `);
+    }
+
+    function openDay(key) {
+      renderDayModal(key);
+    }
+
+    function ensureWorkoutIds() {
+      let changed = false;
+      data.forEach(w => {
+        if (!w.id) {
+          w.id = 'w_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+          changed = true;
+        }
+        if (!w.color) {
+          w.color = '#8e8e93';
+          changed = true;
+        }
+      });
+      if (changed) save();
+    }
+
+    function addWorkoutToDay(key, workoutIndex) {
+      const workout = data[workoutIndex];
+      if (!workout) return;
+
+      ensureWorkoutIds();
+
+      if (!calendarData[key]) calendarData[key] = [];
+
+      calendarData[key].push({
+        workoutId: workout.id,
+        addedAt: Date.now()
+      });
+
+      save();
+      renderDayModal(key);
+      renderCalendar();
+    }
+
+    function removeWorkoutFromDay(key, entryIndex) {
+      if (!calendarData[key]) return;
+
+      calendarData[key].splice(entryIndex, 1);
+
+      if (calendarData[key].length === 0) {
+        delete calendarData[key];
+      }
+
+      save();
+      renderDayModal(key);
+      renderCalendar();
+    }
+
+    ensureWorkoutIds();
+    renderNotes();
+  </script>
+</body>
+</html>
