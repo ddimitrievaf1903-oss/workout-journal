@@ -24,6 +24,7 @@
       --shadow:0 4px 10px rgba(0,0,0,0.05);
       --shadow2:0 10px 24px rgba(0,0,0,0.12);
       --radius:18px;
+      --nav-h:76px;
     }
 
     * { box-sizing: border-box; }
@@ -40,12 +41,13 @@
     body {
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
+      overscroll-behavior-y: contain;
     }
 
     .container {
-      max-width: 430px;
+      max-width: 460px;
       margin: auto;
-      padding: 14px 14px calc(90px + env(safe-area-inset-bottom));
+      padding: 14px 14px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));
       min-height: 100dvh;
     }
 
@@ -53,10 +55,11 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      background: linear-gradient(to bottom, rgba(242,242,247,.96), rgba(242,242,247,.88));
+      background: linear-gradient(to bottom, rgba(242,242,247,.98), rgba(242,242,247,.9));
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       padding-bottom: 10px;
+      margin-bottom: 6px;
     }
 
     .title {
@@ -66,26 +69,9 @@
       letter-spacing: -0.02em;
     }
 
-    .tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    .tabs button {
-      min-height: 44px;
-      border-radius: 14px;
-      background: var(--soft);
-      color: #000;
-      border: none;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .tabs button.activeTab {
-      background: #111;
-      color: #fff;
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
     }
 
     .card {
@@ -98,9 +84,7 @@
       transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
     }
 
-    .card:active {
-      transform: scale(0.995);
-    }
+    .card:active { transform: scale(0.995); }
 
     .card.dragging {
       opacity: .7;
@@ -163,6 +147,7 @@
       padding: 10px 12px;
       font-family: inherit;
       background: #fff;
+      outline: none;
     }
 
     textarea {
@@ -173,6 +158,7 @@
     .helper {
       font-size: 12px;
       color: var(--muted);
+      line-height: 1.45;
     }
 
     .workoutColorDot {
@@ -204,6 +190,7 @@
       border: 2px solid transparent;
       cursor: pointer;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+      transition: transform .14s ease;
     }
 
     .colorOption.active {
@@ -298,7 +285,7 @@
 
     .modalBox {
       width: 100%;
-      max-width: 430px;
+      max-width: 460px;
       max-height: 90dvh;
       overflow: auto;
       background: #fff;
@@ -402,7 +389,7 @@
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
     }
 
-    /* Notes UI */
+    /* Notes */
     .notesHeader {
       display: flex;
       align-items: center;
@@ -463,6 +450,37 @@
       gap: 10px;
     }
 
+    .noteSwipeWrap {
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+    }
+
+    .noteSwipeActions {
+      position: absolute;
+      inset: 0 0 0 auto;
+      width: 108px;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      gap: 0;
+      z-index: 1;
+    }
+
+    .noteSwipeActions button {
+      border-radius: 0;
+      flex: 1;
+      min-height: 100%;
+      font-size: 16px;
+    }
+
+    .noteSwipeCard {
+      position: relative;
+      z-index: 2;
+      touch-action: pan-y;
+      will-change: transform;
+    }
+
     .noteCard {
       background: #fff;
       border-radius: 18px;
@@ -488,7 +506,7 @@
       font-size: 16px;
       font-weight: 700;
       margin-bottom: 6px;
-      padding-right: 120px;
+      padding-right: 110px;
       line-height: 1.3;
     }
 
@@ -543,7 +561,7 @@
     .notesFab {
       position: fixed;
       right: 18px;
-      bottom: calc(22px + env(safe-area-inset-bottom));
+      bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
       width: 58px;
       height: 58px;
       border-radius: 50%;
@@ -551,6 +569,46 @@
       line-height: 1;
       box-shadow: 0 10px 24px rgba(0,122,255,.24);
       z-index: 40;
+    }
+
+    .bottomNav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(0,0,0,.06);
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .bottomNavInner {
+      max-width: 460px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .bottomNav button {
+      min-height: 52px;
+      border-radius: 16px;
+      background: transparent;
+      color: #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .bottomNav button.activeTab {
+      background: #111;
+      color: #fff;
     }
 
     @media (min-width: 760px) {
@@ -571,6 +629,10 @@
 </head>
 <body>
   <div class="container" id="app"></div>
+
+  <div class="bottomNav">
+    <div class="bottomNavInner" id="bottomNav"></div>
+  </div>
 
   <script>
     firebase.initializeApp({
@@ -601,6 +663,7 @@
     let calendarCursor = new Date();
     let notesSearch = '';
     let noteAutosaveTimer = null;
+    let currentlySwipedNoteId = null;
 
     const workoutColors = [
       '#007aff',
@@ -623,14 +686,17 @@
 
     function saveCloud() {
       suppressNextSnapshot = true;
-      return db.collection("users").doc("main").set({
-        workouts: data,
-        calendarData: calendarData,
-        notesData: notesData,
-        notesFolders: notesFolders,
-        notesPrefs: notesPrefs,
+
+      const payload = {
+        workouts: Array.isArray(data) ? data : [],
+        calendarData: (calendarData && typeof calendarData === 'object') ? calendarData : {},
+        notesData: Array.isArray(notesData) ? notesData : [],
+        notesFolders: Array.isArray(notesFolders) ? notesFolders : [],
+        notesPrefs: (notesPrefs && typeof notesPrefs === 'object') ? notesPrefs : {},
         updatedAt: Date.now()
-      }).catch((err) => {
+      };
+
+      return db.collection("users").doc("main").set(payload, { merge: true }).catch((err) => {
         suppressNextSnapshot = false;
         console.error("Firebase save error:", err);
       });
@@ -669,8 +735,10 @@
     }
 
     function normalizeTags(list) {
-      if (!Array.isArray(list)) return [];
-      return list.map(t => String(t).trim()).filter(Boolean);
+      if (Array.isArray(list)) {
+        return list.map(t => String(t).trim()).filter(Boolean);
+      }
+      return [];
     }
 
     function ensureWorkoutIds() {
@@ -719,6 +787,22 @@
       return [...set].sort((a,b)=>a.localeCompare(b,'ru'));
     }
 
+    function renderBottomNav() {
+      const el = document.getElementById('bottomNav');
+      if (!el) return;
+      el.innerHTML = `
+        <button class="${currentTab === 'notes' ? 'activeTab' : ''}" onclick="showNotes()">
+          <span>📝</span><span>Заметки</span>
+        </button>
+        <button class="${currentTab === 'workouts' ? 'activeTab' : ''}" onclick="showWorkouts()">
+          <span>🏋️</span><span>Тренировки</span>
+        </button>
+        <button class="${currentTab === 'calendar' ? 'activeTab' : ''}" onclick="showCalendar()">
+          <span>📅</span><span>Календарь</span>
+        </button>
+      `;
+    }
+
     db.collection("users").doc("main").onSnapshot(doc => {
       if (!doc.exists) return;
 
@@ -728,11 +812,14 @@
       }
 
       const cloud = doc.data() || {};
-      data = cloud.workouts || [];
-      calendarData = cloud.calendarData || {};
-      notesData = cloud.notesData || [];
-      notesFolders = cloud.notesFolders || [];
-      notesPrefs = cloud.notesPrefs || notesPrefs;
+
+      if (Array.isArray(cloud.workouts)) data = cloud.workouts;
+      if (cloud.calendarData && typeof cloud.calendarData === 'object') calendarData = cloud.calendarData;
+      if (Array.isArray(cloud.notesData)) notesData = cloud.notesData;
+      if (Array.isArray(cloud.notesFolders)) notesFolders = cloud.notesFolders;
+      if (cloud.notesPrefs && typeof cloud.notesPrefs === 'object') {
+        notesPrefs = { ...notesPrefs, ...cloud.notesPrefs };
+      }
 
       ensureWorkoutIds();
       migrateNotesSystem();
@@ -752,14 +839,11 @@
       console.error("Firebase sync error:", err);
     });
 
-    function renderTabs() {
+    function renderTopHeader(title, right='') {
       return `
         <div class="stickyTop">
-          <div class="tabs">
-            <button class="${currentTab === 'notes' ? 'activeTab' : 'secondary'}" onclick="showNotes()">Заметки</button>
-            <button class="${currentTab === 'workouts' ? 'activeTab' : 'secondary'}" onclick="showWorkouts()">Тренировки</button>
-            <button class="${currentTab === 'calendar' ? 'activeTab' : 'secondary'}" onclick="showCalendar()">Календарь</button>
-          </div>
+          <h1 class="title">${title}</h1>
+          ${right}
         </div>
       `;
     }
@@ -856,26 +940,26 @@
     function renderNotes() {
       currentTab = 'notes';
       migrateNotesSystem();
+      renderBottomNav();
 
       const tags = allTags();
       const items = filteredNotes();
       const app = document.getElementById('app');
 
       app.innerHTML = `
-        ${renderTabs()}
-
-        <div class="notesHeader">
-          <h1 class="title">Заметки</h1>
-          <div class="viewSwitch">
-            <button class="${notesPrefs.view === 'grid' ? 'active' : 'secondary'}" onclick="setNotesView('grid')">▥</button>
-            <button class="${notesPrefs.view === 'list' ? 'active' : 'secondary'}" onclick="setNotesView('list')">☰</button>
+        ${renderTopHeader('Заметки', `
+          <div class="notesHeader" style="justify-content:flex-end;margin-bottom:0">
+            <div class="viewSwitch">
+              <button class="${notesPrefs.view === 'grid' ? 'active' : 'secondary'}" onclick="setNotesView('grid')">▥</button>
+              <button class="${notesPrefs.view === 'list' ? 'active' : 'secondary'}" onclick="setNotesView('list')">☰</button>
+            </div>
           </div>
-        </div>
+        `)}
 
         <input class="notesSearch" placeholder="Поиск по заметкам" value="${escapeHtml(notesSearch)}" oninput="setNotesSearch(this.value)">
 
         <div class="notesSegments">
-          <button class="chip ${notesPrefs.section === 'all' ? 'active' : ''}" onclick="setNotesSection('all')">Все заметки</button>
+          <button class="chip ${notesPrefs.section === 'all' ? 'active' : ''}" onclick="setNotesSection('all')">Все</button>
           <button class="chip ${notesPrefs.section === 'folders' ? 'active' : ''}" onclick="setNotesSection('folders')">Папки</button>
           <button class="chip ${notesPrefs.section === 'favorites' ? 'active' : ''}" onclick="setNotesSection('favorites')">Избранное</button>
           <button class="chip ${notesPrefs.section === 'tags' ? 'active' : ''}" onclick="setNotesSection('tags')">Теги</button>
@@ -913,8 +997,28 @@
           </div>
         ` : ''}
 
-        <div class="${notesPrefs.view === 'grid' ? 'notesGrid' : 'notesList'}">
-          ${items.length ? items.map(note => `
+        <div class="${notesPrefs.view === 'grid' ? 'notesGrid' : 'notesList'}" id="notesContainer">
+          ${items.length ? items.map(note => noteCardHtml(note)).join('') : `
+            <div class="card">
+              <div class="helper">Нет заметок по текущим фильтрам.</div>
+            </div>
+          `}
+        </div>
+
+        <button class="notesFab" onclick="openNoteEditor()">+</button>
+      `;
+
+      attachSwipeToNotes();
+    }
+
+    function noteCardHtml(note) {
+      return `
+        <div class="noteSwipeWrap" data-note-wrap="${note.id}">
+          <div class="noteSwipeActions">
+            <button class="secondary" onclick="toggleFavoriteNote('${note.id}')">${note.favorite ? '★' : '☆'}</button>
+            <button class="red" onclick="deleteNote('${note.id}')">🗑</button>
+          </div>
+          <div class="noteSwipeCard" data-note-card="${note.id}">
             <div class="noteCard" onclick="openNoteEditor('${note.id}')">
               <div class="noteCardActions">
                 <button class="small secondary" onclick="event.stopPropagation();toggleFavoriteNote('${note.id}')">${note.favorite ? '★' : '☆'}</button>
@@ -929,15 +1033,72 @@
                 <span>${escapeHtml(formatDateTime(note.updatedAt))}</span>
               </div>
             </div>
-          `).join('') : `
-            <div class="card">
-              <div class="helper">Нет заметок по текущим фильтрам.</div>
-            </div>
-          `}
+          </div>
         </div>
-
-        <button class="notesFab" onclick="openNoteEditor()">+</button>
       `;
+    }
+
+    function closeAllSwipes() {
+      document.querySelectorAll('[data-note-card]').forEach(el => {
+        el.style.transform = 'translateX(0px)';
+      });
+      currentlySwipedNoteId = null;
+    }
+
+    function attachSwipeToNotes() {
+      closeAllSwipes();
+
+      document.addEventListener('click', noteGlobalClickHandler, true);
+
+      document.querySelectorAll('[data-note-card]').forEach(card => {
+        let startX = 0;
+        let currentX = 0;
+        let swiping = false;
+        const maxLeft = -108;
+        const noteId = card.dataset.noteCard;
+
+        card.addEventListener('touchstart', e => {
+          startX = e.touches[0].clientX;
+          currentX = 0;
+          swiping = true;
+
+          if (currentlySwipedNoteId && currentlySwipedNoteId !== noteId) {
+            closeAllSwipes();
+          }
+        }, { passive: true });
+
+        card.addEventListener('touchmove', e => {
+          if (!swiping) return;
+          const dx = e.touches[0].clientX - startX;
+          if (dx < 0) {
+            currentX = Math.max(maxLeft, dx);
+            card.style.transform = `translateX(${currentX}px)`;
+          } else if (currentlySwipedNoteId === noteId) {
+            currentX = Math.min(0, maxLeft + dx);
+            card.style.transform = `translateX(${currentX}px)`;
+          }
+        }, { passive: true });
+
+        card.addEventListener('touchend', () => {
+          if (!swiping) return;
+          swiping = false;
+
+          if (currentX < -54) {
+            card.style.transform = `translateX(${maxLeft}px)`;
+            currentlySwipedNoteId = noteId;
+          } else {
+            card.style.transform = 'translateX(0px)';
+            if (currentlySwipedNoteId === noteId) currentlySwipedNoteId = null;
+          }
+        });
+      });
+    }
+
+    function noteGlobalClickHandler(e) {
+      const inside = e.target.closest('[data-note-card]') || e.target.closest('.noteSwipeActions');
+      if (!inside && currentlySwipedNoteId) {
+        closeAllSwipes();
+      }
     }
 
     function createFolder() {
@@ -1169,11 +1330,11 @@
 
     function home() {
       currentTab = 'workouts';
+      renderBottomNav();
       const app = document.getElementById('app');
 
       app.innerHTML = `
-        ${renderTabs()}
-        <h1 class="title">Тренировки</h1>
+        ${renderTopHeader('Тренировки')}
         <div id="list"></div>
 
         <div class="row">
@@ -1289,14 +1450,14 @@
 
     function openW(i) {
       currentTab = 'workouts';
+      renderBottomNav();
       cw = i;
       const w = data[i];
       const app = document.getElementById('app');
 
       app.innerHTML = `
-        ${renderTabs()}
+        ${renderTopHeader(w.name)}
         <button class="secondary" onclick="home()">← Назад</button>
-        <h1 class="title">${escapeHtml(w.name)}</h1>
         <div id="list"></div>
 
         <button class="bigBtn" onclick="addE('normal')">Добавить упражнение</button>
@@ -1581,6 +1742,7 @@
 
     function renderCalendar() {
       currentTab = 'calendar';
+      renderBottomNav();
       const app = document.getElementById('app');
 
       const year = calendarCursor.getFullYear();
@@ -1642,9 +1804,7 @@
       }
 
       app.innerHTML = `
-        ${renderTabs()}
-        <h1 class="title">Календарь</h1>
-
+        ${renderTopHeader('Календарь')}
         <div class="calendarWrap">
           <div class="calendarHeader">
             <button class="secondary" onclick="changeMonth(-1)">←</button>
@@ -1757,6 +1917,13 @@
         </div>
       `;
 
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('show');
+          setTimeout(() => modal.remove(), 180);
+        }
+      });
+
       document.body.appendChild(modal);
 
       requestAnimationFrame(() => {
@@ -1773,6 +1940,14 @@
         modal = document.createElement('div');
         modal.className = 'modal';
         modal.innerHTML = `<div class="modalBox"></div>`;
+
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.classList.remove('show');
+            setTimeout(() => modal.remove(), 180);
+          }
+        });
+
         document.body.appendChild(modal);
         requestAnimationFrame(() => {
           modal.classList.add('show');
@@ -1863,6 +2038,7 @@
       input.click();
     }
 
+    renderBottomNav();
     ensureWorkoutIds();
     migrateNotesSystem();
     renderNotes();
