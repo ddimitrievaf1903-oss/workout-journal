@@ -20,6 +20,7 @@
       max-width: 420px;
       margin: auto;
       padding: 16px;
+      padding-bottom: 92px;
     }
 
     .card {
@@ -29,7 +30,7 @@
       margin-bottom: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
       position: relative;
-      transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+      transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
     }
 
     .card.dragging {
@@ -38,17 +39,9 @@
       box-shadow: 0 10px 24px rgba(0,0,0,0.12);
     }
 
-    .done {
-      background: #e8f8ee;
-    }
-
-    .special {
-      background: #e6f0ff;
-    }
-
-    .extra {
-      background: #e8f8ee;
-    }
+    .done { background: #e8f8ee; }
+    .special { background: #e6f0ff; }
+    .extra { background: #e8f8ee; }
 
     .exercise-img {
       width: 100%;
@@ -67,6 +60,7 @@
       color: #fff;
       cursor: pointer;
       font-size: 14px;
+      transition: transform .15s ease, opacity .15s ease;
     }
 
     button:active {
@@ -78,23 +72,10 @@
       padding: 4px 6px;
     }
 
-    .green {
-      background: #34c759;
-    }
-
-    .red {
-      background: #ff3b30;
-    }
-
-    .yellow {
-      background: #ffcc00;
-      color: #000;
-    }
-
-    .secondary {
-      background: #e5e5ea;
-      color: #000;
-    }
+    .green { background: #34c759; }
+    .red { background: #ff3b30; }
+    .yellow { background: #ffcc00; color: #000; }
+    .secondary { background: #e5e5ea; color: #000; }
 
     .bigBtn {
       width: 100%;
@@ -149,22 +130,18 @@
       user-select: none;
     }
 
-    .gray {
-      background: #d1d1d6;
-      color: #000;
-    }
-
-    .yellowBg {
-      background: #ffcc00;
-      color: #000;
-    }
+    .gray { background: #d1d1d6; color: #000; }
+    .yellowBg { background: #ffcc00; color: #000; }
 
     .editor {
       border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 8px;
-      min-height: 120px;
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 180px;
       background: #fff;
+      line-height: 1.55;
+      font-size: 16px;
+      outline: none;
     }
 
     .toolbar {
@@ -203,14 +180,15 @@
     .modalBox {
       background: #fff;
       padding: 16px;
-      border-radius: 16px;
+      border-radius: 18px;
       width: 100%;
-      max-width: 360px;
-      transform: translateY(20px);
+      max-width: 380px;
+      transform: translateY(18px);
       opacity: 0;
-      transition: transform 0.2s ease, opacity 0.2s ease;
-      max-height: 80vh;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+      max-height: 84vh;
       overflow: auto;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
     }
 
     .modal.show .modalBox {
@@ -220,7 +198,7 @@
 
     input, select, textarea {
       padding: 8px;
-      border-radius: 8px;
+      border-radius: 10px;
       border: 1px solid #ccc;
       font-size: 14px;
       box-sizing: border-box;
@@ -235,8 +213,8 @@
 
     .modalListItem {
       background: #f8f8fa;
-      border-radius: 10px;
-      padding: 8px 10px;
+      border-radius: 12px;
+      padding: 10px;
       margin-top: 8px;
       display: flex;
       justify-content: space-between;
@@ -386,70 +364,160 @@
       gap: 8px;
     }
 
-    .noteTitle {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      padding-right: 110px;
+    /* Notes */
+    .notesTopBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
     }
 
-    .notePreview {
+    .notesSearch {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .notesSegments,
+    .notesFilters,
+    .tagWrap,
+    .folderWrap {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .chip {
+      border: none;
+      background: #eef1f5;
+      color: #333;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .16s ease;
+    }
+
+    .chip.active {
+      background: #111;
+      color: #fff;
+    }
+
+    .notesGrid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .notesList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .noteCard {
+      background: #fff;
+      border-radius: 18px;
+      padding: 14px;
+      position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      transition: transform .18s ease, box-shadow .18s ease;
+      cursor: pointer;
+    }
+
+    .noteCard:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+
+    .noteCardTitle {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      padding-right: 112px;
+    }
+
+    .noteCardPreview {
       font-size: 13px;
       color: #555;
-      line-height: 1.35;
+      line-height: 1.45;
       display: -webkit-box;
       -webkit-line-clamp: 5;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      white-space: normal;
+      min-height: 38px;
     }
 
-    .noteTopActions {
+    .noteCardMeta {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .noteCardActions {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 12px;
+      right: 12px;
       display: flex;
       gap: 6px;
     }
 
-    .pinBadge {
+    .notePill {
       display: inline-block;
-      font-size: 11px;
-      color: #666;
-      margin-bottom: 6px;
-    }
-
-    .searchInput {
-      width: 100%;
-    }
-
-    .noteEditorTitle {
-      width: 100%;
-      margin-bottom: 8px;
-    }
-
-    .noteMeta {
-      font-size: 12px;
-      color: #777;
-      margin-top: 8px;
-    }
-
-    .checkBtn {
-      min-width: 38px;
-    }
-
-    .noteFolderTag {
-      display: inline-block;
-      background: #f0f0f3;
+      background: #f0f1f5;
       color: #444;
       font-size: 12px;
       padding: 4px 8px;
       border-radius: 999px;
-      margin-bottom: 8px;
     }
 
-    .noteListPlain {
+    .folderManageRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: #f8f8fa;
+      border-radius: 12px;
+      padding: 10px 12px;
       margin-top: 8px;
+    }
+
+    .notesFab {
+      position: fixed;
+      right: 18px;
+      bottom: 22px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      font-size: 28px;
+      line-height: 1;
+      box-shadow: 0 10px 24px rgba(0,122,255,0.24);
+      z-index: 20;
+    }
+
+    .viewSwitch {
+      display: flex;
+      gap: 6px;
+    }
+
+    .viewSwitch button.active {
+      background: #111;
+      color: #fff;
+    }
+
+    .helper {
+      font-size: 12px;
+      color: #777;
+    }
+
+    @media (min-width: 760px) {
+      .notesGrid {
+        grid-template-columns: 1fr 1fr;
+      }
     }
   </style>
 </head>
@@ -467,6 +535,13 @@
     let data = JSON.parse(localStorage.getItem('workouts')) || [];
     let calendarData = JSON.parse(localStorage.getItem('calendarData')) || {};
     let notesData = JSON.parse(localStorage.getItem('notesData')) || [];
+    let notesFolders = JSON.parse(localStorage.getItem('notesFolders')) || [];
+    let notesPrefs = JSON.parse(localStorage.getItem('notesPrefs')) || {
+      view: 'grid',
+      section: 'all',
+      currentFolderId: 'all',
+      currentTag: 'all'
+    };
 
     let cw = null;
     let ce = null;
@@ -478,6 +553,7 @@
     let currentTab = 'notes';
     let calendarCursor = new Date();
     let notesSearch = '';
+    let noteAutosaveTimer = null;
 
     const workoutColors = [
       '#007aff',
@@ -494,6 +570,8 @@
       localStorage.setItem('workouts', JSON.stringify(data));
       localStorage.setItem('calendarData', JSON.stringify(calendarData));
       localStorage.setItem('notesData', JSON.stringify(notesData));
+      localStorage.setItem('notesFolders', JSON.stringify(notesFolders));
+      localStorage.setItem('notesPrefs', JSON.stringify(notesPrefs));
     }
 
     function saveCloud() {
@@ -502,6 +580,8 @@
         workouts: data,
         calendarData: calendarData,
         notesData: notesData,
+        notesFolders: notesFolders,
+        notesPrefs: notesPrefs,
         updatedAt: Date.now()
       }).catch((err) => {
         suppressNextSnapshot = false;
@@ -541,6 +621,64 @@
       });
     }
 
+    function ensureWorkoutIds() {
+      let changed = false;
+      data.forEach(w => {
+        if (!w.id) {
+          w.id = 'w_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+          changed = true;
+        }
+        if (!w.color) {
+          w.color = '#8e8e93';
+          changed = true;
+        }
+      });
+      if (changed) save();
+    }
+
+    function ensureDefaultFolder() {
+      if (!notesFolders.length) {
+        notesFolders = [
+          { id: 'fld_default', name: 'Личное', createdAt: Date.now() }
+        ];
+      }
+    }
+
+    function normalizeTags(raw) {
+      return (raw || [])
+        .map(t => String(t).trim())
+        .filter(Boolean);
+    }
+
+    function migrateNotesSystem() {
+      ensureDefaultFolder();
+
+      notesData = notesData.map(note => {
+        const folderId = note.folderId || notesFolders[0]?.id || 'fld_default';
+        return {
+          id: note.id || ('n_' + Math.random().toString(36).slice(2) + Date.now().toString(36)),
+          title: note.title || '',
+          content: note.content || '',
+          pinned: !!note.pinned,
+          favorite: !!note.favorite,
+          folderId,
+          tags: normalizeTags(note.tags || []),
+          createdAt: note.createdAt || Date.now(),
+          updatedAt: note.updatedAt || Date.now()
+        };
+      });
+    }
+
+    function allTags() {
+      const tags = new Set();
+      notesData.forEach(n => (n.tags || []).forEach(tag => tags.add(tag)));
+      return [...tags].sort((a, b) => a.localeCompare(b, 'ru'));
+    }
+
+    function folderNameById(folderId) {
+      return notesFolders.find(f => f.id === folderId)?.name || 'Без папки';
+    }
+
     db.collection("users").doc("main").onSnapshot(doc => {
       if (!doc.exists) return;
 
@@ -553,7 +691,11 @@
       data = cloud.workouts || [];
       calendarData = cloud.calendarData || {};
       notesData = cloud.notesData || [];
+      notesFolders = cloud.notesFolders || [];
+      notesPrefs = cloud.notesPrefs || notesPrefs;
 
+      ensureWorkoutIds();
+      migrateNotesSystem();
       saveLocal();
 
       if (currentTab === 'calendar') {
@@ -610,81 +752,25 @@
       `;
     }
 
-    function ensureNoteDefaults(note) {
-      return {
-        id: note.id || ('n_' + Math.random().toString(36).slice(2) + Date.now().toString(36)),
-        title: note.title || '',
-        content: note.content || '',
-        pinned: !!note.pinned,
-        folder: note.folder || '',
-        createdAt: note.createdAt || Date.now(),
-        updatedAt: note.updatedAt || Date.now()
-      };
+    function setNotesView(view) {
+      notesPrefs.view = view;
+      save();
+      renderNotes();
     }
 
-    function renderNotes() {
-      currentTab = 'notes';
-      notesData = notesData.map(ensureNoteDefaults);
+    function setNotesSection(section) {
+      notesPrefs.section = section;
+      renderNotes();
+    }
 
-      const app = document.getElementById('app');
+    function setNotesFolder(folderId) {
+      notesPrefs.currentFolderId = folderId;
+      renderNotes();
+    }
 
-      const filtered = [...notesData]
-        .filter(n => {
-          const hay = `${n.title || ''} ${stripHtml(n.content || '')} ${n.folder || ''}`;
-          return hay.toLowerCase().includes(notesSearch.toLowerCase());
-        })
-        .sort((a, b) => {
-          if (!!b.pinned !== !!a.pinned) return Number(b.pinned) - Number(a.pinned);
-          return (b.updatedAt || 0) - (a.updatedAt || 0);
-        });
-
-      app.innerHTML = `
-        ${renderTabs()}
-        <div class="title">Заметки</div>
-
-        <div class="row">
-          <input class="searchInput" id="notesSearch" placeholder="Поиск по заметкам" value="${escapeHtml(notesSearch)}" oninput="setNotesSearch(this.value)" />
-        </div>
-
-        <div class="row">
-          <button class="bigBtn" onclick="openNoteEditor()">Новая заметка</button>
-        </div>
-
-        <div id="notesList"></div>
-      `;
-
-      const list = document.getElementById('notesList');
-
-      if (!filtered.length) {
-        list.innerHTML = `<div class="card"><div class="emptyText">Пока нет заметок.</div></div>`;
-        return;
-      }
-
-      filtered.forEach(note => {
-        const d = document.createElement('div');
-        d.className = 'card';
-
-        d.innerHTML = `
-          <div class="noteTopActions">
-            <button class="small secondary" onclick="togglePinNote('${note.id}')">${note.pinned ? '📌' : '📍'}</button>
-            <button class="small" onclick="openNoteEditor('${note.id}')">✏️</button>
-            <button class="small red" onclick="deleteNote('${note.id}')">🗑</button>
-          </div>
-
-          ${note.pinned ? `<div class="pinBadge">Закреплено</div>` : ''}
-          ${note.folder ? `<div class="noteFolderTag">${escapeHtml(note.folder)}</div>` : ''}
-          <div class="noteTitle">${escapeHtml(note.title || 'Без названия')}</div>
-          <div class="notePreview">${escapeHtml(stripHtml(note.content || ''))}</div>
-          <div class="noteMeta">Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}</div>
-        `;
-
-        d.onclick = (e) => {
-          if (e.target.closest('button')) return;
-          openNoteEditor(note.id);
-        };
-
-        list.appendChild(d);
-      });
+    function setNotesTag(tag) {
+      notesPrefs.currentTag = tag;
+      renderNotes();
     }
 
     function setNotesSearch(value) {
@@ -692,52 +778,176 @@
       renderNotes();
     }
 
-    function openNoteEditor(noteId = null) {
-      const existing = noteId
-        ? notesData.find(n => n.id === noteId)
-        : null;
+    function filteredNotes() {
+      let items = [...notesData];
 
-      const note = ensureNoteDefaults(existing || {});
+      if (notesPrefs.section === 'favorites') {
+        items = items.filter(n => n.favorite);
+      }
 
-      openCustomModal(`
-        <div class="title" style="font-size:18px;margin-bottom:8px">${noteId ? 'Редактировать заметку' : 'Новая заметка'}</div>
+      if (notesPrefs.currentFolderId !== 'all') {
+        items = items.filter(n => n.folderId === notesPrefs.currentFolderId);
+      }
 
-        <input id="noteTitleInput" class="noteEditorTitle" placeholder="Заголовок" value="${escapeHtml(note.title)}" />
-        <input id="noteFolderInput" class="noteEditorTitle" placeholder="Папка / тег" value="${escapeHtml(note.folder)}" />
+      if (notesPrefs.currentTag !== 'all') {
+        items = items.filter(n => (n.tags || []).includes(notesPrefs.currentTag));
+      }
 
-        <div class="toolbar">
-          <button onclick="fmt('bold')">B</button>
-          <button onclick="fmt('italic')">I</button>
-          <button onclick="fmt('underline')">U</button>
-          <button onclick="insertChecklist()">☑︎</button>
-          <button onclick="insertDivider()">—</button>
-          <select onchange="fmt('fontName', this.value)">
-            <option value="">Шрифт</option>
-            <option value="Arial">Arial</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Courier New">Courier</option>
-            <option value="Verdana">Verdana</option>
-          </select>
-          <select onchange="fmt('fontSize', this.value)">
-            <option value="">Размер</option>
-            <option value="2">Мал.</option>
-            <option value="3">Сред.</option>
-            <option value="5">Круп.</option>
-          </select>
+      if (notesSearch.trim()) {
+        const q = notesSearch.trim().toLowerCase();
+        items = items.filter(n => {
+          const hay = `${n.title} ${stripHtml(n.content)} ${(n.tags || []).join(' ')} ${folderNameById(n.folderId)}`.toLowerCase();
+          return hay.includes(q);
+        });
+      }
+
+      items.sort((a, b) => {
+        if (!!b.pinned !== !!a.pinned) return Number(b.pinned) - Number(a.pinned);
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      });
+
+      return items;
+    }
+
+    function renderNotes() {
+      currentTab = 'notes';
+      migrateNotesSystem();
+
+      const tags = allTags();
+      const items = filteredNotes();
+      const app = document.getElementById('app');
+
+      app.innerHTML = `
+        ${renderTabs()}
+        <div class="notesTopBar">
+          <div class="title" style="margin-bottom:0">Заметки</div>
+          <div class="viewSwitch">
+            <button class="${notesPrefs.view === 'grid' ? 'active' : 'secondary'}" onclick="setNotesView('grid')">▥</button>
+            <button class="${notesPrefs.view === 'list' ? 'active' : 'secondary'}" onclick="setNotesView('list')">☰</button>
+          </div>
         </div>
 
-        <div contenteditable="true" class="editor" id="noteContentEditor">${note.content || ''}</div>
+        <input class="notesSearch" placeholder="Поиск по заметкам" value="${escapeHtml(notesSearch)}" oninput="setNotesSearch(this.value)">
 
-        <div class="row">
-          <button class="green" onclick="saveNoteFromModal('${note.id}')">Сохранить</button>
-          <button class="secondary" onclick="togglePinNoteFromEditor('${note.id}')">${note.pinned ? 'Открепить' : 'Закрепить'}</button>
+        <div class="notesSegments">
+          <button class="chip ${notesPrefs.section === 'all' ? 'active' : ''}" onclick="setNotesSection('all')">Все заметки</button>
+          <button class="chip ${notesPrefs.section === 'folders' ? 'active' : ''}" onclick="setNotesSection('folders')">Папки</button>
+          <button class="chip ${notesPrefs.section === 'favorites' ? 'active' : ''}" onclick="setNotesSection('favorites')">Избранное</button>
+          <button class="chip ${notesPrefs.section === 'tags' ? 'active' : ''}" onclick="setNotesSection('tags')">Теги</button>
         </div>
 
-        <div class="noteMeta">
-          Создано: ${escapeHtml(formatDateTime(note.createdAt))}<br>
-          Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}
+        <div class="folderWrap">
+          <button class="chip ${notesPrefs.currentFolderId === 'all' ? 'active' : ''}" onclick="setNotesFolder('all')">Все папки</button>
+          ${notesFolders.map(f => `
+            <button class="chip ${notesPrefs.currentFolderId === f.id ? 'active' : ''}" onclick="setNotesFolder('${f.id}')">${escapeHtml(f.name)}</button>
+          `).join('')}
         </div>
-      `);
+
+        <div class="tagWrap">
+          <button class="chip ${notesPrefs.currentTag === 'all' ? 'active' : ''}" onclick="setNotesTag('all')">Все теги</button>
+          ${tags.map(tag => `
+            <button class="chip ${notesPrefs.currentTag === tag ? 'active' : ''}" onclick="setNotesTag('${escapeHtml(tag)}')">#${escapeHtml(tag)}</button>
+          `).join('')}
+        </div>
+
+        ${notesPrefs.section === 'folders' ? `
+          <div class="card">
+            <div class="modalSectionTitle">Управление папками</div>
+            <div class="row">
+              <input id="newFolderName" placeholder="Новая папка" style="flex:1">
+              <button onclick="createFolder()">Создать</button>
+            </div>
+            <div id="foldersManageList">
+              ${notesFolders.map(f => `
+                <div class="folderManageRow">
+                  <span>${escapeHtml(f.name)}</span>
+                  <div class="row" style="margin-top:0">
+                    <button class="small" onclick="renameFolder('${f.id}')">✏️</button>
+                    <button class="small red" onclick="deleteFolder('${f.id}')">🗑</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="${notesPrefs.view === 'grid' ? 'notesGrid' : 'notesList'}" id="notesListArea">
+          ${items.length ? items.map(note => `
+            <div class="noteCard" onclick="openNoteEditor('${note.id}')">
+              <div class="noteCardActions">
+                <button class="small secondary" onclick="event.stopPropagation();toggleFavoriteNote('${note.id}')">${note.favorite ? '★' : '☆'}</button>
+                <button class="small secondary" onclick="event.stopPropagation();togglePinNote('${note.id}')">${note.pinned ? '📌' : '📍'}</button>
+                <button class="small red" onclick="event.stopPropagation();deleteNote('${note.id}')">🗑</button>
+              </div>
+              <div class="noteCardTitle">${escapeHtml(note.title || 'Без названия')}</div>
+              <div class="noteCardPreview">${escapeHtml(stripHtml(note.content || ''))}</div>
+              <div class="noteCardMeta">
+                <span class="notePill">${escapeHtml(folderNameById(note.folderId))}</span>
+                ${(note.tags || []).slice(0,3).map(t => `<span class="notePill">#${escapeHtml(t)}</span>`).join('')}
+                <span>${escapeHtml(formatDateTime(note.updatedAt))}</span>
+              </div>
+            </div>
+          `).join('') : `
+            <div class="card">
+              <div class="emptyText">Нет заметок по текущему фильтру.</div>
+            </div>
+          `}
+        </div>
+
+        <button class="notesFab" onclick="openNoteEditor()">+</button>
+      `;
+    }
+
+    function createFolder() {
+      const input = document.getElementById('newFolderName');
+      const name = input?.value?.trim();
+      if (!name) return;
+
+      notesFolders.push({
+        id: 'fld_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
+        name,
+        createdAt: Date.now()
+      });
+
+      input.value = '';
+      save();
+      renderNotes();
+    }
+
+    function renameFolder(folderId) {
+      const folder = notesFolders.find(f => f.id === folderId);
+      if (!folder) return;
+      const name = prompt('Название папки', folder.name);
+      if (!name || !name.trim()) return;
+      folder.name = name.trim();
+      save();
+      renderNotes();
+    }
+
+    function deleteFolder(folderId) {
+      const folder = notesFolders.find(f => f.id === folderId);
+      if (!folder) return;
+
+      const fallback = notesFolders.find(f => f.id !== folderId);
+      if (!fallback) {
+        alert('Должна остаться хотя бы одна папка.');
+        return;
+      }
+
+      if (!confirm(`Удалить папку "${folder.name}"? Заметки будут перенесены в "${fallback.name}".`)) return;
+
+      notesData.forEach(n => {
+        if (n.folderId === folderId) n.folderId = fallback.id;
+      });
+
+      notesFolders = notesFolders.filter(f => f.id !== folderId);
+
+      if (notesPrefs.currentFolderId === folderId) {
+        notesPrefs.currentFolderId = 'all';
+      }
+
+      save();
+      renderNotes();
     }
 
     function insertChecklist() {
@@ -747,40 +957,127 @@
       document.execCommand('insertHTML', false, '<div>☐ Новый пункт</div>');
     }
 
-    function insertDivider() {
+    function insertBulletList() {
       const editor = document.getElementById('noteContentEditor');
       if (!editor) return;
       editor.focus();
-      document.execCommand('insertHTML', false, '<hr>');
+      document.execCommand('insertUnorderedList', false, null);
     }
 
-    function saveNoteFromModal(noteId) {
+    function insertHeading() {
+      const editor = document.getElementById('noteContentEditor');
+      if (!editor) return;
+      editor.focus();
+      document.execCommand('formatBlock', false, 'h2');
+    }
+
+    function queueNoteAutosave(noteId) {
+      clearTimeout(noteAutosaveTimer);
+      noteAutosaveTimer = setTimeout(() => {
+        saveNoteFromModal(noteId, true);
+      }, 500);
+    }
+
+    function openNoteEditor(noteId = null) {
+      migrateNotesSystem();
+
+      const existing = noteId
+        ? notesData.find(n => n.id === noteId)
+        : null;
+
+      const note = existing || {
+        id: 'n_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
+        title: '',
+        content: '',
+        pinned: false,
+        favorite: false,
+        folderId: notesFolders[0]?.id || 'fld_default',
+        tags: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+
+      openCustomModal(`
+        <div class="title" style="font-size:18px;margin-bottom:8px">${noteId ? 'Заметка' : 'Новая заметка'}</div>
+
+        <input id="noteTitleInput" class="noteEditorTitle" placeholder="Заголовок" value="${escapeHtml(note.title)}" oninput="queueNoteAutosave('${note.id}')">
+
+        <div class="row">
+          <select id="noteFolderSelect" style="flex:1" onchange="queueNoteAutosave('${note.id}')">
+            ${notesFolders.map(f => `<option value="${f.id}" ${note.folderId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
+          </select>
+          <input id="noteTagsInput" placeholder="Теги через запятую" style="flex:1" value="${escapeHtml((note.tags || []).join(', '))}" oninput="queueNoteAutosave('${note.id}')">
+        </div>
+
+        <div class="toolbar">
+          <button onclick="fmt('bold')">B</button>
+          <button onclick="fmt('italic')">I</button>
+          <button onclick="fmt('underline')">U</button>
+          <button onclick="insertHeading()">H</button>
+          <button onclick="insertBulletList()">• Список</button>
+          <button onclick="insertChecklist()">☑︎</button>
+          <select onchange="fmt('fontName', this.value)">
+            <option value="">Шрифт</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier</option>
+            <option value="Verdana">Verdana</option>
+          </select>
+        </div>
+
+        <div contenteditable="true" class="editor" id="noteContentEditor" oninput="queueNoteAutosave('${note.id}')">${note.content || ''}</div>
+
+        <div class="row">
+          <button class="green" onclick="saveNoteFromModal('${note.id}')">Сохранить</button>
+          <button class="secondary" onclick="togglePinNoteFromEditor('${note.id}')">${note.pinned ? 'Открепить' : 'Закрепить'}</button>
+          <button class="secondary" onclick="toggleFavoriteNoteFromEditor('${note.id}')">${note.favorite ? 'Убрать ★' : 'В избранное'}</button>
+        </div>
+
+        <div class="helper">
+          Автосохранение включено
+        </div>
+
+        <div class="helper">
+          Создано: ${escapeHtml(formatDateTime(note.createdAt))}<br>
+          Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}
+        </div>
+      `);
+    }
+
+    function saveNoteFromModal(noteId, silent = false) {
       const title = document.getElementById('noteTitleInput')?.value?.trim() || '';
-      const folder = document.getElementById('noteFolderInput')?.value?.trim() || '';
+      const folderId = document.getElementById('noteFolderSelect')?.value || (notesFolders[0]?.id || 'fld_default');
+      const tags = normalizeTags((document.getElementById('noteTagsInput')?.value || '').split(','));
       const content = document.getElementById('noteContentEditor')?.innerHTML || '';
 
       const existing = notesData.find(n => n.id === noteId);
 
       if (existing) {
         existing.title = title || 'Без названия';
-        existing.folder = folder;
+        existing.folderId = folderId;
+        existing.tags = tags;
         existing.content = content;
         existing.updatedAt = Date.now();
       } else {
         notesData.push({
           id: noteId,
           title: title || 'Без названия',
-          folder: folder,
-          content: content,
+          folderId,
+          tags,
+          content,
           pinned: false,
+          favorite: false,
           createdAt: Date.now(),
           updatedAt: Date.now()
         });
       }
 
       save();
-      closeTopModal();
-      renderNotes();
+
+      if (!silent) {
+        closeTopModal();
+        renderNotes();
+      }
     }
 
     function togglePinNoteFromEditor(noteId) {
@@ -789,25 +1086,26 @@
         existing.pinned = !existing.pinned;
         existing.updatedAt = Date.now();
       } else {
-        notesData.push({
-          id: noteId,
-          title: document.getElementById('noteTitleInput')?.value?.trim() || 'Без названия',
-          folder: document.getElementById('noteFolderInput')?.value?.trim() || '',
-          content: document.getElementById('noteContentEditor')?.innerHTML || '',
-          pinned: true,
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        });
+        saveNoteFromModal(noteId, true);
+        const note = notesData.find(n => n.id === noteId);
+        if (note) note.pinned = true;
       }
       save();
       openNoteEditor(noteId);
     }
 
-    function deleteNote(noteId) {
-      if (!confirm('Удалить заметку?')) return;
-      notesData = notesData.filter(n => n.id !== noteId);
+    function toggleFavoriteNoteFromEditor(noteId) {
+      const existing = notesData.find(n => n.id === noteId);
+      if (existing) {
+        existing.favorite = !existing.favorite;
+        existing.updatedAt = Date.now();
+      } else {
+        saveNoteFromModal(noteId, true);
+        const note = notesData.find(n => n.id === noteId);
+        if (note) note.favorite = true;
+      }
       save();
-      renderNotes();
+      openNoteEditor(noteId);
     }
 
     function togglePinNote(noteId) {
@@ -815,6 +1113,22 @@
       if (!note) return;
       note.pinned = !note.pinned;
       note.updatedAt = Date.now();
+      save();
+      renderNotes();
+    }
+
+    function toggleFavoriteNote(noteId) {
+      const note = notesData.find(n => n.id === noteId);
+      if (!note) return;
+      note.favorite = !note.favorite;
+      note.updatedAt = Date.now();
+      save();
+      renderNotes();
+    }
+
+    function deleteNote(noteId) {
+      if (!confirm('Удалить заметку?')) return;
+      notesData = notesData.filter(n => n.id !== noteId);
       save();
       renderNotes();
     }
@@ -1296,7 +1610,9 @@
       const payload = {
         workouts: data,
         calendarData: calendarData,
-        notesData: notesData
+        notesData: notesData,
+        notesFolders: notesFolders,
+        notesPrefs: notesPrefs
       };
       const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -1328,13 +1644,17 @@
               data = parsed;
               calendarData = {};
               notesData = [];
+              notesFolders = [];
             } else {
               data = parsed.workouts || [];
               calendarData = parsed.calendarData || {};
               notesData = parsed.notesData || [];
+              notesFolders = parsed.notesFolders || [];
+              notesPrefs = parsed.notesPrefs || notesPrefs;
             }
 
             ensureWorkoutIds();
+            migrateNotesSystem();
             save();
             renderNotes();
           } catch (err) {
@@ -1348,215 +1668,8 @@
       input.click();
     }
 
-    function formatDayKey(y, m, d) {
-      const safeDate = new Date(y, m, d);
-      const yy = safeDate.getFullYear();
-      const mm = String(safeDate.getMonth() + 1).padStart(2, '0');
-      const dd = String(safeDate.getDate()).padStart(2, '0');
-      return `${yy}-${mm}-${dd}`;
-    }
-
-    function monthTitle(date) {
-      const months = [
-        'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-      ];
-      return `${months[date.getMonth()]} ${date.getFullYear()}`;
-    }
-
-    function changeMonth(delta) {
-      calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
-      renderCalendar();
-    }
-
-    function buildDayDots(entries) {
-      return entries.map(entry => {
-        const workout = data.find(w => w.id === entry.workoutId);
-        if (!workout) return '';
-        return `<div class="dayDot" style="background:${workout.color || '#8e8e93'}"></div>`;
-      }).join('');
-    }
-
-    function renderCalendar() {
-      currentTab = 'calendar';
-      const app = document.getElementById('app');
-
-      const year = calendarCursor.getFullYear();
-      const month = calendarCursor.getMonth();
-
-      const first = new Date(year, month, 1);
-      const last = new Date(year, month + 1, 0);
-
-      let firstWeekDay = first.getDay();
-      if (firstWeekDay === 0) firstWeekDay = 7;
-      const leadingDays = firstWeekDay - 1;
-
-      const daysInMonth = last.getDate();
-      const prevMonthLast = new Date(year, month, 0).getDate();
-
-      const today = new Date();
-      const todayKey = formatDayKey(today.getFullYear(), today.getMonth(), today.getDate());
-
-      let cells = '';
-
-      const weekLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-      const weekHeader = weekLabels.map(d => `<div class="weekday">${d}</div>`).join('');
-
-      for (let i = leadingDays - 1; i >= 0; i--) {
-        const day = prevMonthLast - i;
-        const prevKey = formatDayKey(year, month - 1, day);
-        const prevEntries = calendarData[prevKey] || [];
-        const prevDots = buildDayDots(prevEntries);
-
-        cells += `
-          <div class="dayCell outsideMonth" onclick="openDay('${prevKey}')">
-            <div class="dayNumber">${day}</div>
-            <div class="dayDots">${prevDots}</div>
-          </div>
-        `;
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const key = formatDayKey(year, month, day);
-        const entries = calendarData[key] || [];
-        const dots = buildDayDots(entries);
-        const todayClass = key === todayKey ? ' today' : '';
-
-        cells += `
-          <div class="dayCell${todayClass}" onclick="openDay('${key}')">
-            <div class="dayNumber">${day}</div>
-            <div class="dayDots">${dots}</div>
-          </div>
-        `;
-      }
-
-      const used = leadingDays + daysInMonth;
-      const trailing = used % 7 === 0 ? 0 : 7 - (used % 7);
-
-      for (let day = 1; day <= trailing; day++) {
-        const nextKey = formatDayKey(year, month + 1, day);
-        const nextEntries = calendarData[nextKey] || [];
-        const nextDots = buildDayDots(nextEntries);
-
-        cells += `
-          <div class="dayCell outsideMonth" onclick="openDay('${nextKey}')">
-            <div class="dayNumber">${day}</div>
-            <div class="dayDots">${nextDots}</div>
-          </div>
-        `;
-      }
-
-      app.innerHTML = `
-        ${renderTabs()}
-        <div class="title">Календарь</div>
-
-        <div class="calendarWrap">
-          <div class="calendarHeader">
-            <button class="secondary" onclick="changeMonth(-1)">←</button>
-            <div class="calendarTitle">${monthTitle(calendarCursor)}</div>
-            <button class="secondary" onclick="changeMonth(1)">→</button>
-          </div>
-
-          <div class="calendarGrid">
-            ${weekHeader}
-            ${cells}
-          </div>
-        </div>
-      `;
-    }
-
-    function renderDayModal(key) {
-      const entries = calendarData[key] || [];
-
-      const existingHtml = entries.length
-        ? entries.map((entry, idx) => {
-            const workout = data.find(w => w.id === entry.workoutId);
-            if (!workout) return '';
-            return `
-              <div class="modalListItem">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <div class="workoutColorDot" style="background:${workout.color || '#8e8e93'}"></div>
-                  <span>${escapeHtml(workout.name)}</span>
-                </div>
-                <button class="red" onclick="removeWorkoutFromDay('${key}', ${idx})">🗑</button>
-              </div>
-            `;
-          }).join('')
-        : `<div class="emptyText">На этот день пока ничего не добавлено.</div>`;
-
-      const options = data.length
-        ? data.map((w, i) => `
-            <div class="modalListItem">
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="workoutColorDot" style="background:${w.color || '#8e8e93'}"></div>
-                <span>${escapeHtml(w.name)}</span>
-              </div>
-              <button onclick="addWorkoutToDay('${key}', ${i})">Добавить</button>
-            </div>
-          `).join('')
-        : `<div class="emptyText">Сначала добавь тренировки в листе «Тренировки».</div>`;
-
-      openCustomModal(`
-        <div class="title" style="font-size:18px;margin-bottom:8px">День ${key}</div>
-        <div class="modalSectionTitle">Добавленные тренировки</div>
-        ${existingHtml}
-        <div class="modalSectionTitle">Выбрать тренировку</div>
-        ${options}
-      `);
-    }
-
-    function openDay(key) {
-      renderDayModal(key);
-    }
-
-    function ensureWorkoutIds() {
-      let changed = false;
-      data.forEach(w => {
-        if (!w.id) {
-          w.id = 'w_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-          changed = true;
-        }
-        if (!w.color) {
-          w.color = '#8e8e93';
-          changed = true;
-        }
-      });
-      if (changed) save();
-    }
-
-    function addWorkoutToDay(key, workoutIndex) {
-      const workout = data[workoutIndex];
-      if (!workout) return;
-
-      ensureWorkoutIds();
-
-      if (!calendarData[key]) calendarData[key] = [];
-
-      calendarData[key].push({
-        workoutId: workout.id,
-        addedAt: Date.now()
-      });
-
-      save();
-      renderDayModal(key);
-      renderCalendar();
-    }
-
-    function removeWorkoutFromDay(key, entryIndex) {
-      if (!calendarData[key]) return;
-
-      calendarData[key].splice(entryIndex, 1);
-
-      if (calendarData[key].length === 0) {
-        delete calendarData[key];
-      }
-
-      save();
-      renderDayModal(key);
-      renderCalendar();
-    }
-
     ensureWorkoutIds();
+    migrateNotesSystem();
     renderNotes();
   </script>
 </body>
