@@ -218,12 +218,19 @@
       opacity: 1;
     }
 
-    input, select {
+    input, select, textarea {
       padding: 8px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 14px;
       box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      resize: vertical;
     }
 
     .modalListItem {
@@ -383,7 +390,7 @@
       font-size: 16px;
       font-weight: 600;
       margin-bottom: 6px;
-      padding-right: 96px;
+      padding-right: 110px;
     }
 
     .notePreview {
@@ -391,9 +398,10 @@
       color: #555;
       line-height: 1.35;
       display: -webkit-box;
-      -webkit-line-clamp: 4;
+      -webkit-line-clamp: 5;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      white-space: normal;
     }
 
     .noteTopActions {
@@ -418,6 +426,30 @@
     .noteEditorTitle {
       width: 100%;
       margin-bottom: 8px;
+    }
+
+    .noteMeta {
+      font-size: 12px;
+      color: #777;
+      margin-top: 8px;
+    }
+
+    .checkBtn {
+      min-width: 38px;
+    }
+
+    .noteFolderTag {
+      display: inline-block;
+      background: #f0f0f3;
+      color: #444;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+
+    .noteListPlain {
+      margin-top: 8px;
     }
   </style>
 </head>
@@ -498,6 +530,17 @@
       return div.textContent || div.innerText || '';
     }
 
+    function formatDateTime(ts) {
+      if (!ts) return '';
+      return new Date(ts).toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
     db.collection("users").doc("main").onSnapshot(doc => {
       if (!doc.exists) return;
 
@@ -567,13 +610,27 @@
       `;
     }
 
+    function ensureNoteDefaults(note) {
+      return {
+        id: note.id || ('n_' + Math.random().toString(36).slice(2) + Date.now().toString(36)),
+        title: note.title || '',
+        content: note.content || '',
+        pinned: !!note.pinned,
+        folder: note.folder || '',
+        createdAt: note.createdAt || Date.now(),
+        updatedAt: note.updatedAt || Date.now()
+      };
+    }
+
     function renderNotes() {
       currentTab = 'notes';
+      notesData = notesData.map(ensureNoteDefaults);
+
       const app = document.getElementById('app');
 
       const filtered = [...notesData]
         .filter(n => {
-          const hay = (n.title || '') + ' ' + stripHtml(n.content || '');
+          const hay = `${n.title || ''} ${stripHtml(n.content || '')} ${n.folder || ''}`;
           return hay.toLowerCase().includes(notesSearch.toLowerCase());
         })
         .sort((a, b) => {
@@ -615,8 +672,10 @@
           </div>
 
           ${note.pinned ? `<div class="pinBadge">Закреплено</div>` : ''}
+          ${note.folder ? `<div class="noteFolderTag">${escapeHtml(note.folder)}</div>` : ''}
           <div class="noteTitle">${escapeHtml(note.title || 'Без названия')}</div>
           <div class="notePreview">${escapeHtml(stripHtml(note.content || ''))}</div>
+          <div class="noteMeta">Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}</div>
         `;
 
         d.onclick = (e) => {
@@ -634,26 +693,24 @@
     }
 
     function openNoteEditor(noteId = null) {
-      const note = noteId
+      const existing = noteId
         ? notesData.find(n => n.id === noteId)
-        : {
-            id: 'n_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
-            title: '',
-            content: '',
-            pinned: false,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-          };
+        : null;
+
+      const note = ensureNoteDefaults(existing || {});
 
       openCustomModal(`
         <div class="title" style="font-size:18px;margin-bottom:8px">${noteId ? 'Редактировать заметку' : 'Новая заметка'}</div>
 
         <input id="noteTitleInput" class="noteEditorTitle" placeholder="Заголовок" value="${escapeHtml(note.title)}" />
+        <input id="noteFolderInput" class="noteEditorTitle" placeholder="Папка / тег" value="${escapeHtml(note.folder)}" />
 
         <div class="toolbar">
           <button onclick="fmt('bold')">B</button>
           <button onclick="fmt('italic')">I</button>
           <button onclick="fmt('underline')">U</button>
+          <button onclick="insertChecklist()">☑︎</button>
+          <button onclick="insertDivider()">—</button>
           <select onchange="fmt('fontName', this.value)">
             <option value="">Шрифт</option>
             <option value="Arial">Arial</option>
@@ -673,24 +730,47 @@
 
         <div class="row">
           <button class="green" onclick="saveNoteFromModal('${note.id}')">Сохранить</button>
+          <button class="secondary" onclick="togglePinNoteFromEditor('${note.id}')">${note.pinned ? 'Открепить' : 'Закрепить'}</button>
+        </div>
+
+        <div class="noteMeta">
+          Создано: ${escapeHtml(formatDateTime(note.createdAt))}<br>
+          Изменено: ${escapeHtml(formatDateTime(note.updatedAt))}
         </div>
       `);
     }
 
+    function insertChecklist() {
+      const editor = document.getElementById('noteContentEditor');
+      if (!editor) return;
+      editor.focus();
+      document.execCommand('insertHTML', false, '<div>☐ Новый пункт</div>');
+    }
+
+    function insertDivider() {
+      const editor = document.getElementById('noteContentEditor');
+      if (!editor) return;
+      editor.focus();
+      document.execCommand('insertHTML', false, '<hr>');
+    }
+
     function saveNoteFromModal(noteId) {
       const title = document.getElementById('noteTitleInput')?.value?.trim() || '';
+      const folder = document.getElementById('noteFolderInput')?.value?.trim() || '';
       const content = document.getElementById('noteContentEditor')?.innerHTML || '';
 
       const existing = notesData.find(n => n.id === noteId);
 
       if (existing) {
         existing.title = title || 'Без названия';
+        existing.folder = folder;
         existing.content = content;
         existing.updatedAt = Date.now();
       } else {
         notesData.push({
           id: noteId,
           title: title || 'Без названия',
+          folder: folder,
           content: content,
           pinned: false,
           createdAt: Date.now(),
@@ -701,6 +781,26 @@
       save();
       closeTopModal();
       renderNotes();
+    }
+
+    function togglePinNoteFromEditor(noteId) {
+      const existing = notesData.find(n => n.id === noteId);
+      if (existing) {
+        existing.pinned = !existing.pinned;
+        existing.updatedAt = Date.now();
+      } else {
+        notesData.push({
+          id: noteId,
+          title: document.getElementById('noteTitleInput')?.value?.trim() || 'Без названия',
+          folder: document.getElementById('noteFolderInput')?.value?.trim() || '',
+          content: document.getElementById('noteContentEditor')?.innerHTML || '',
+          pinned: true,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+      save();
+      openNoteEditor(noteId);
     }
 
     function deleteNote(noteId) {
