@@ -1036,6 +1036,155 @@
       .conscienceCongrats { max-width: none; margin-left: 0; }
     }
 
+
+    /* Year Planner visual refresh */
+    .lifePlanWrap {
+      background:
+        radial-gradient(circle at 20% 0%, rgba(255,255,255,.92), transparent 34%),
+        linear-gradient(180deg, #fffaf3 0%, #f3f7ef 55%, #eef6f5 100%);
+      border-radius: 28px;
+      padding: 14px;
+      box-shadow: 0 14px 34px rgba(91, 78, 55, .10);
+      border: 1px solid rgba(142, 117, 73, .12);
+    }
+
+    .lifePlanIntro {
+      text-align: center;
+      color: #7b6f5d;
+      font-size: 13px;
+      line-height: 1.45;
+      margin: -4px 4px 4px;
+    }
+
+    .planBlock {
+      border-radius: 24px;
+      border: 1px solid rgba(117, 100, 73, .10);
+      box-shadow: 0 10px 26px rgba(83, 76, 60, .08);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255,255,255,.92), transparent 32%),
+        linear-gradient(135deg, #fffefb, #f4f8ef);
+    }
+
+    .planBlock.bigPlan {
+      min-height: 126px;
+      background:
+        radial-gradient(circle at 18% 16%, rgba(255,255,255,.95), transparent 33%),
+        linear-gradient(135deg, #fff6ea, #eff9f1 58%, #eaf7f7);
+      border: 1px solid rgba(103, 139, 94, .16);
+    }
+
+    .planBlockFill,
+    .lifeSubGroupFill,
+    .lifeItemCell .planBlockFill {
+      background: linear-gradient(90deg, rgba(255,128,171,.30), rgba(174,230,132,.34), rgba(52,199,89,.38));
+    }
+
+    .planTitleLarge::before {
+      content: '✦ ';
+      color: rgba(52, 199, 89, .8);
+    }
+
+    .planTitleLarge::after {
+      content: ' ✦';
+      color: rgba(255, 128, 171, .8);
+    }
+
+    .planBlock.lifeSectionBlock.bodyTheme {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,255,255,.92), transparent 30%),
+        linear-gradient(135deg, #fff1f7, #eef7ff);
+    }
+
+    .planBlock.lifeSectionBlock.jobTheme {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,255,255,.92), transparent 30%),
+        linear-gradient(135deg, #effcf2, #eef4ff);
+    }
+
+    .planBlock.lifeSectionBlock.conscienceTheme {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,255,255,.92), transparent 30%),
+        linear-gradient(135deg, #fff7e8, #f3efff);
+    }
+
+    .lifeSubGroupBlock {
+      border-radius: 22px;
+      border: 1px solid rgba(117, 100, 73, .10);
+      box-shadow: 0 8px 20px rgba(83, 76, 60, .07);
+      background: rgba(255,255,255,.66);
+    }
+
+    .lifeSubGroupHeader {
+      background:
+        radial-gradient(circle at 14% 10%, rgba(255,255,255,.9), transparent 30%),
+        linear-gradient(135deg, rgba(255,255,255,.94), rgba(249,250,244,.94));
+    }
+
+    .lifeItemCell {
+      border-radius: 18px;
+      border: 1px solid rgba(117, 100, 73, .08);
+      background:
+        radial-gradient(circle at 10% 8%, rgba(255,255,255,.9), transparent 30%),
+        linear-gradient(135deg, #ffffff, #fbfaf4);
+    }
+
+    .lifeItemTitleText {
+      flex: 1;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.25;
+      font-weight: 650;
+      color: #35322d;
+      padding: 7px 8px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.62);
+      word-break: break-word;
+    }
+
+    .lifeEditNameBtn {
+      width: 28px;
+      min-width: 28px;
+      height: 28px;
+      min-height: 28px;
+      padding: 0;
+      border-radius: 50%;
+      background: rgba(229,229,234,.58);
+      color: rgba(0,0,0,.45);
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: .65;
+    }
+
+    .lifeEditNameBtn:active {
+      transform: scale(.98);
+      opacity: .82;
+    }
+
+    .lifeItemTop button:not(.lifeEditNameBtn) {
+      min-width: 70px;
+    }
+
+    .lifeYearBadge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 0 auto 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.65);
+      color: #796d5d;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(117,100,73,.08);
+    }
+
   </style>
 </head>
 <body>
@@ -1549,6 +1698,15 @@
       if (cloudSave) save();
     }
 
+    function editLifeItemName(id, fallback) {
+      ensureLifePlanDefaults();
+      const current = lifeItemName(id, fallback);
+      const value = prompt('Название ячейки', current);
+      if (value === null) return;
+      setLifeItemName(id, value.trim() || fallback, true);
+      renderLifeManagement();
+    }
+
     function toggleLifeItem(id) {
       ensureLifePlanDefaults();
       const nextValue = !lifeData.plan.done[id];
@@ -1623,17 +1781,13 @@
 
     function lifeItemCell(item, parentTotal, parentLabel) {
       const done = isLifeItemDone(item.id);
+      const name = lifeItemName(item.id, item.def);
       return `
         <div class="lifeItemCell ${done ? 'done' : ''}" style="--fill:${done ? 100 : 0}%">
           <div class="planBlockFill"></div>
           <div class="lifeItemTop">
-            <input
-              class="lifeItemName"
-              value="${escapeHtml(lifeItemName(item.id, item.def))}"
-              oninput="setLifeItemName('${item.id}', this.value, false)"
-              onchange="setLifeItemName('${item.id}', this.value, true)"
-              onblur="setLifeItemName('${item.id}', this.value, true)"
-            >
+            <div class="lifeItemTitleText">${escapeHtml(name)}</div>
+            <button class="lifeEditNameBtn" onclick="editLifeItemName('${item.id}', '${escapeHtml(item.def)}')">✎</button>
             <button class="${done ? 'green' : 'secondary'} small" onclick="toggleLifeItem('${item.id}')">${done ? '✓' : 'Готово'}</button>
           </div>
         </div>
@@ -1697,6 +1851,8 @@
       app.innerHTML = `
         ${renderTopHeader('Life Management')}
         <div class="lifePlanWrap">
+          <div class="lifeYearBadge">🌿 Годовой планер роста</div>
+          <div class="lifePlanIntro">Тихий личный план на год: тело, дело и совесть. Каждый закрытый шаг постепенно наполняет общий путь.</div>
           <div class="lifeTopRow">
             ${planBlock('Выполнение плана', overallFill, '', true)}
             ${lifeData.plan.conscienceCongrats ? `<div class="conscienceCongrats">Поздравляем, теперь вы становитесь лучше!</div>` : ''}
