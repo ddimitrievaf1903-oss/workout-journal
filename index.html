@@ -944,6 +944,98 @@
       text-align: center;
     }
 
+
+    .lifeSubGroupBlock {
+      background: rgba(255,255,255,.72);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,.03);
+    }
+
+    .lifeSubGroupHeader {
+      position: relative;
+      overflow: hidden;
+      min-height: 58px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      background: linear-gradient(135deg, #ffffff, #f7f8fb);
+    }
+
+    .lifeSubGroupHeader:active { transform: scale(.997); }
+
+    .lifeSubGroupFill {
+      position: absolute;
+      inset: 0;
+      width: var(--fill, 0%);
+      background: linear-gradient(90deg, rgba(255,45,85,.24), rgba(52,199,89,.34));
+      transition: width .25s ease;
+      pointer-events: none;
+    }
+
+    .lifeSubGroupTitle {
+      position: relative;
+      z-index: 2;
+      font-size: 15px;
+      font-weight: 850;
+      letter-spacing: -.01em;
+    }
+
+    .lifeSubGroupChevron {
+      position: relative;
+      z-index: 2;
+      font-size: 17px;
+      opacity: .55;
+      transition: transform .16s ease;
+    }
+
+    .lifeSubGroupChevron.open { transform: rotate(90deg); }
+
+    .lifeSubGroupItems {
+      padding: 10px;
+      animation: noteFade .16s ease;
+    }
+
+    .lifeTopRow {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .lifeTopRow .planBlock.bigPlan { flex: 1; }
+
+    .conscienceCongrats {
+      margin-left: auto;
+      max-width: 240px;
+      background: linear-gradient(135deg, rgba(255,45,85,.14), rgba(52,199,89,.22));
+      border: 1px solid rgba(52,199,89,.22);
+      border-radius: 18px;
+      padding: 12px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+      box-shadow: 0 0 18px rgba(52,199,89,.22);
+      animation: conscienceGlow 1.2s ease-in-out infinite alternate;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes conscienceGlow {
+      from { transform: translateY(0); box-shadow: 0 0 12px rgba(52,199,89,.18); }
+      to { transform: translateY(-1px); box-shadow: 0 0 24px rgba(52,199,89,.36); }
+    }
+
+    @media (max-width: 430px) {
+      .lifeTopRow { flex-direction: column; }
+      .conscienceCongrats { max-width: none; margin-left: 0; }
+    }
+
   </style>
 </head>
 <body>
@@ -1324,6 +1416,8 @@
           conscience: false
         };
       }
+      if (!lifeData.plan.expandedGroups) lifeData.plan.expandedGroups = {};
+      if (typeof lifeData.plan.conscienceCongrats !== 'boolean') lifeData.plan.conscienceCongrats = false;
       if (typeof lifeData.plan.expanded.body !== 'boolean') lifeData.plan.expanded.body = true;
       if (typeof lifeData.plan.expanded.job !== 'boolean') lifeData.plan.expanded.job = false;
       if (typeof lifeData.plan.expanded.conscience !== 'boolean') lifeData.plan.expanded.conscience = false;
@@ -1457,7 +1551,22 @@
 
     function toggleLifeItem(id) {
       ensureLifePlanDefaults();
-      lifeData.plan.done[id] = !lifeData.plan.done[id];
+      const nextValue = !lifeData.plan.done[id];
+      lifeData.plan.done[id] = nextValue;
+
+      if (id === 'conscience_1') {
+        lifeData.plan.conscienceCongrats = nextValue;
+      } else if (nextValue) {
+        lifeData.plan.conscienceCongrats = false;
+      }
+
+      save();
+      renderLifeManagement();
+    }
+
+    function toggleLifeSubGroup(groupId) {
+      ensureLifePlanDefaults();
+      lifeData.plan.expandedGroups[groupId] = !lifeData.plan.expandedGroups[groupId];
       save();
       renderLifeManagement();
     }
@@ -1532,10 +1641,26 @@
     }
 
     function renderLifeSubGroup(group, sectionTotal, sectionTitle) {
+      ensureLifePlanDefaults();
+      const expanded = !!lifeData.plan.expandedGroups[group.id];
+      const groupDone = sumLife(group.items, true);
+      const groupTotal = sumLife(group.items, false);
+      const fill = pct(groupDone, groupTotal);
+
       return `
-        <div class="planSubTitle">${group.title}</div>
-        <div class="lifeItemGrid">
-          ${group.items.map(item => lifeItemCell(item, sectionTotal, sectionTitle)).join('')}
+        <div class="lifeSubGroupBlock">
+          <div class="lifeSubGroupHeader" style="--fill:${fill}%" onclick="toggleLifeSubGroup('${group.id}')">
+            <div class="lifeSubGroupFill"></div>
+            <div class="lifeSubGroupTitle">${escapeHtml(group.title)}</div>
+            <div class="lifeSubGroupChevron ${expanded ? 'open' : ''}">›</div>
+          </div>
+          ${expanded ? `
+            <div class="lifeSubGroupItems">
+              <div class="lifeItemGrid">
+                ${group.items.map(item => lifeItemCell(item, sectionTotal, sectionTitle)).join('')}
+              </div>
+            </div>
+          ` : ''}
         </div>
       `;
     }
@@ -1572,7 +1697,10 @@
       app.innerHTML = `
         ${renderTopHeader('Life Management')}
         <div class="lifePlanWrap">
-          ${planBlock('Выполнение плана', overallFill, '', true)}
+          <div class="lifeTopRow">
+            ${planBlock('Выполнение плана', overallFill, '', true)}
+            ${lifeData.plan.conscienceCongrats ? `<div class="conscienceCongrats">Поздравляем, теперь вы становитесь лучше!</div>` : ''}
+          </div>
 
           ${Object.entries(sections).map(([key, section]) => renderLifeSection(key, section)).join('')}
 
