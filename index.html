@@ -835,12 +835,7 @@
     }
 
     .lifeItemMeta {
-      position: relative;
-      z-index: 2;
-      margin-top: 6px;
-      font-size: 12px;
-      color: #666;
-      line-height: 1.35;
+      display: none;
     }
 
     @media (min-width: 760px) {
@@ -898,6 +893,55 @@
     .lifeItemTop button {
       white-space: nowrap;
       min-width: 72px;
+    }
+
+
+    .planBlock.lifeSectionBlock {
+      min-height: 86px;
+      border: 1px solid rgba(255,255,255,.65);
+      background:
+        radial-gradient(circle at 14% 15%, rgba(255,255,255,.82), transparent 28%),
+        linear-gradient(135deg, #ffffff, #f7f8fb);
+    }
+
+    .planBlock.lifeSectionBlock.bodyTheme {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,255,255,.9), transparent 28%),
+        linear-gradient(135deg, #fff7fb, #eef7ff);
+    }
+
+    .planBlock.lifeSectionBlock.jobTheme {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,255,255,.9), transparent 28%),
+        linear-gradient(135deg, #f7fff9, #eef4ff);
+    }
+
+    .planBlock.lifeSectionBlock.conscienceTheme {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,255,255,.9), transparent 28%),
+        linear-gradient(135deg, #fff9ec, #f6efff);
+    }
+
+    .lifeSectionIcon {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.62);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
+      margin-right: 8px;
+      font-size: 18px;
+    }
+
+    .lifeSectionTitleLine {
+      display: flex;
+      align-items: center;
+    }
+
+    .lifeItemName {
+      text-align: center;
     }
 
   </style>
@@ -1113,6 +1157,12 @@
         renderCalendar();
       } else if (currentTab === 'notes') {
         renderNotes();
+      } else if (currentTab === 'life') {
+        if (lifeUnlocked) {
+          renderLifeManagement();
+        } else {
+          renderLifeLock();
+        }
       } else if (typeof cw === "number" && data[cw]) {
         openW(cw);
       } else {
@@ -1398,10 +1448,11 @@
       return !!lifeData.plan.done[id];
     }
 
-    function setLifeItemName(id, value) {
+    function setLifeItemName(id, value, cloudSave = true) {
       ensureLifePlanDefaults();
       lifeData.plan.names[id] = String(value || '').trim();
-      save();
+      saveLocal();
+      if (cloudSave) save();
     }
 
     function toggleLifeItem(id) {
@@ -1437,11 +1488,11 @@
       }) + '%';
     }
 
-    function planBlock(title, fillPct, subtitle = '', large = false, onclick = '', open = false) {
+    function planBlock(title, fillPct, subtitle = '', large = false, onclick = '', open = false, extraClass = '') {
       const clickableClass = onclick ? 'planButton' : '';
       const clickAttr = onclick ? `onclick="${onclick}"` : '';
       return `
-        <div class="planBlock ${large ? 'bigPlan' : ''} ${clickableClass}" style="--fill:${fillPct}%" ${clickAttr}>
+        <div class="planBlock ${large ? 'bigPlan' : ''} ${clickableClass} ${extraClass}" style="--fill:${fillPct}%" ${clickAttr}>
           <div class="planBlockFill"></div>
           <div class="planBlockContent">
             ${onclick ? `
@@ -1463,7 +1514,6 @@
 
     function lifeItemCell(item, parentTotal, parentLabel) {
       const done = isLifeItemDone(item.id);
-      const parentPct = (item.total / parentTotal) * 100;
       return `
         <div class="lifeItemCell ${done ? 'done' : ''}" style="--fill:${done ? 100 : 0}%">
           <div class="planBlockFill"></div>
@@ -1471,24 +1521,19 @@
             <input
               class="lifeItemName"
               value="${escapeHtml(lifeItemName(item.id, item.def))}"
-              onchange="setLifeItemName('${item.id}', this.value)"
-              onblur="setLifeItemName('${item.id}', this.value)"
+              oninput="setLifeItemName('${item.id}', this.value, false)"
+              onchange="setLifeItemName('${item.id}', this.value, true)"
+              onblur="setLifeItemName('${item.id}', this.value, true)"
             >
-            <button class="${done ? 'green' : 'secondary'} small" onclick="toggleLifeItem('${item.id}')">${done ? '✓' : 'Выполнено'}</button>
-          </div>
-          <div class="lifeItemMeta">
-            К плану: ${fmtPct(item.total)} · к ${parentLabel}: ${fmtPct(parentPct)}
+            <button class="${done ? 'green' : 'secondary'} small" onclick="toggleLifeItem('${item.id}')">${done ? '✓' : 'Готово'}</button>
           </div>
         </div>
       `;
     }
 
     function renderLifeSubGroup(group, sectionTotal, sectionTitle) {
-      const total = sumLife(group.items);
-      const done = sumLife(group.items, true);
       return `
         <div class="planSubTitle">${group.title}</div>
-        ${planBlock(group.title, pct(done, total), `${fmtPct(done)} из ${fmtPct(total)} к плану · ${fmtPct(pct(done, total))} выполнено`)}
         <div class="lifeItemGrid">
           ${group.items.map(item => lifeItemCell(item, sectionTotal, sectionTitle)).join('')}
         </div>
@@ -1501,8 +1546,10 @@
       const sectionItems = flattenLifeItems(sectionKey);
       const done = sumLife(sectionItems, true);
       const fill = pct(done, section.total);
+      const icons = { body: '💪', job: '💼', conscience: '🧠' };
+      const title = `<div class="lifeSectionTitleLine"><span class="lifeSectionIcon">${icons[sectionKey] || '•'}</span><span>${section.title}</span></div>`;
       return `
-        ${planBlock(section.title, fill, `${fmtPct(done)} из ${fmtPct(section.total)} · ${fmtPct(fill)} выполнено`, false, `toggleLifeGroup('${sectionKey}')`, expanded)}
+        ${planBlock(title, fill, '', false, `toggleLifeGroup('${sectionKey}')`, expanded, `lifeSectionBlock ${sectionKey}Theme`)}
         ${expanded ? `
           <div class="lifeGroupBody">
             ${section.groups.map(group => renderLifeSubGroup(group, section.total, section.title)).join('')}
@@ -1525,19 +1572,9 @@
       app.innerHTML = `
         ${renderTopHeader('Life Management')}
         <div class="lifePlanWrap">
-          ${planBlock('Выполнение плана', overallFill, `${fmtPct(overallDone)} из 100%`, true)}
+          ${planBlock('Выполнение плана', overallFill, '', true)}
 
-          <div class="planSectionGrid">
-            ${Object.entries(sections).map(([key, section]) => {
-              const done = sumLife(flattenLifeItems(key), true);
-              return planBlock(section.title, pct(done, section.total), `${fmtPct(done)} из ${fmtPct(section.total)}`, false, `toggleLifeGroup('${key}')`, !!lifeData.plan.expanded[key]);
-            }).join('')}
-          </div>
-
-          ${Object.entries(sections).map(([key, section]) => `
-            <div class="planSubTitle">${section.title}</div>
-            ${renderLifeSection(key, section)}
-          `).join('')}
+          ${Object.entries(sections).map(([key, section]) => renderLifeSection(key, section)).join('')}
 
           <div class="row" style="justify-content:center">
             <button class="secondary" onclick="lockLifeManagement()">Заблокировать</button>
