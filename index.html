@@ -1237,6 +1237,179 @@
       }
     }
 
+
+    /* Final fix: аккуратные названия ячеек Life planner */
+    .lifeItemTop {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 24px !important;
+      grid-template-areas:
+        "title edit"
+        "done done" !important;
+      align-items: center !important;
+      gap: 6px 8px !important;
+      width: 100% !important;
+    }
+
+    .lifeItemTitleText {
+      grid-area: title !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      display: block !important;
+      text-align: center !important;
+      white-space: normal !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+      font-size: clamp(10.5px, 3.05vw, 12px) !important;
+      line-height: 1.25 !important;
+      font-weight: 650 !important;
+      padding: 7px 9px !important;
+      max-height: 3.95em !important;
+      overflow: hidden !important;
+    }
+
+    .lifeEditNameBtn {
+      grid-area: edit !important;
+      justify-self: end !important;
+      width: 24px !important;
+      min-width: 24px !important;
+      height: 24px !important;
+      min-height: 24px !important;
+      font-size: 10px !important;
+      opacity: .55 !important;
+    }
+
+    .lifeItemTop button:not(.lifeEditNameBtn) {
+      grid-area: done !important;
+      justify-self: center !important;
+      white-space: nowrap !important;
+      min-width: 92px !important;
+      min-height: 30px !important;
+      margin-top: 2px !important;
+      font-size: 11px !important;
+      padding: 5px 10px !important;
+    }
+
+    .lifeItemCell {
+      min-width: 0 !important;
+    }
+
+    @media (max-width: 380px) {
+      .lifeItemTitleText {
+        font-size: 10.5px !important;
+        padding: 6px 7px !important;
+      }
+      .lifeItemTop button:not(.lifeEditNameBtn) {
+        min-width: 84px !important;
+        font-size: 10.5px !important;
+      }
+    }
+  
+
+    /* Final requested Life layout: centered title and word-based cell wrapping */
+    .stickyTop .title {
+      width: 100% !important;
+      text-align: center !important;
+    }
+
+    .lifePlanWrap {
+      align-items: stretch !important;
+    }
+
+    .lifePlanWrap > .stickyTop,
+    .lifeTopRow,
+    .planBlock.bigPlan {
+      text-align: center !important;
+    }
+
+    .lifeItemGrid {
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+    }
+
+    .lifeItemCell {
+      min-height: 118px !important;
+      padding: 14px !important;
+      overflow: hidden !important;
+    }
+
+    .lifeItemTop {
+      position: relative !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      justify-content: center !important;
+      gap: 10px !important;
+      width: 100% !important;
+      min-height: 88px !important;
+    }
+
+    .lifeItemTitleText {
+      display: block !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      min-height: 46px !important;
+      padding: 9px 34px 9px 12px !important;
+      border-radius: 14px !important;
+      text-align: center !important;
+      font-size: 11.5px !important;
+      line-height: 1.35 !important;
+      font-weight: 650 !important;
+      letter-spacing: -0.01em !important;
+      white-space: normal !important;
+      word-break: keep-all !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+      overflow: visible !important;
+      max-height: none !important;
+    }
+
+    .lifeEditNameBtn {
+      position: absolute !important;
+      top: 9px !important;
+      right: 8px !important;
+      width: 24px !important;
+      min-width: 24px !important;
+      height: 24px !important;
+      min-height: 24px !important;
+      padding: 0 !important;
+      font-size: 10px !important;
+      opacity: .45 !important;
+      z-index: 5 !important;
+    }
+
+    .lifeItemTop button:not(.lifeEditNameBtn) {
+      align-self: center !important;
+      width: auto !important;
+      min-width: 104px !important;
+      min-height: 32px !important;
+      padding: 6px 12px !important;
+      font-size: 11px !important;
+      white-space: nowrap !important;
+    }
+
+    @media (min-width: 760px) {
+      .lifeItemGrid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+      .lifeItemTitleText {
+        font-size: 12px !important;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .lifeItemCell {
+        min-height: 122px !important;
+        padding: 13px !important;
+      }
+      .lifeItemTitleText {
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+      }
+    }
+
   </style>
 </head>
 <body>
