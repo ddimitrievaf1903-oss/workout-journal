@@ -1111,8 +1111,6 @@
 
     function renderLifeLock() {
       const app = document.getElementById('app');
-      const statusClass = lifePinStatus === 'error' ? 'error' : (lifePinStatus === 'success' ? 'success' : '');
-      const shakeClass = lifePinStatus === 'error' ? 'shake' : '';
 
       app.innerHTML = `
         ${renderTopHeader('Life Management')}
@@ -1123,10 +1121,8 @@
             <div class="helper">6 цифр</div>
           </div>
 
-          <div class="pinDots ${shakeClass}">
-            ${[0,1,2,3,4,5].map(i => `
-              <div class="pinDot ${lifePinInput.length > i ? 'filled' : ''} ${statusClass}"></div>
-            `).join('')}
+          <div class="pinDots" id="lifePinDots">
+            ${[0,1,2,3,4,5].map(() => `<div class="pinDot"></div>`).join('')}
           </div>
 
           <input
@@ -1135,33 +1131,64 @@
             type="tel"
             inputmode="numeric"
             maxlength="6"
-            autocomplete="one-time-code"
-            value="${escapeHtml(lifePinInput)}"
+            autocomplete="off"
+            value=""
             oninput="handleLifePinInput(this.value)"
+            onkeydown="handleLifePinKeydown(event)"
           />
         </div>
       `;
 
-      requestAnimationFrame(focusLifePinInput);
+      lifePinInput = '';
+      lifePinStatus = 'idle';
+      requestAnimationFrame(() => {
+        focusLifePinInput();
+        updateLifePinDots();
+      });
     }
 
     function focusLifePinInput() {
       const input = document.getElementById('lifePinHiddenInput');
-      if (input) input.focus();
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
+
+    function updateLifePinDots(status = 'idle') {
+      const dotsWrap = document.getElementById('lifePinDots');
+      if (!dotsWrap) return;
+
+      dotsWrap.classList.toggle('shake', status === 'error');
+
+      [...dotsWrap.querySelectorAll('.pinDot')].forEach((dot, i) => {
+        dot.classList.toggle('filled', lifePinInput.length > i);
+        dot.classList.toggle('error', status === 'error');
+        dot.classList.toggle('success', status === 'success');
+      });
+    }
+
+    function handleLifePinKeydown(event) {
+      if (event.key !== 'Backspace') return;
+      const input = document.getElementById('lifePinHiddenInput');
+      const current = String(input?.value || '').replace(/\D/g, '').slice(0, 6);
+      lifePinInput = current;
+      updateLifePinDots();
     }
 
     function handleLifePinInput(value) {
-      lifePinInput = String(value || '').replace(/\D/g, '').slice(0, 6);
+      const clean = String(value || '').replace(/\D/g, '').slice(0, 6);
+      lifePinInput = clean;
 
-      if (lifePinInput.length < 6) {
-        lifePinStatus = 'idle';
-        renderLifeLock();
-        return;
-      }
+      const input = document.getElementById('lifePinHiddenInput');
+      if (input && input.value !== clean) input.value = clean;
 
-      if (lifePinInput === LIFE_PIN) {
-        lifePinStatus = 'success';
-        renderLifeLock();
+      updateLifePinDots('idle');
+
+      if (clean.length < 6) return;
+
+      if (clean === LIFE_PIN) {
+        updateLifePinDots('success');
         setTimeout(() => {
           lifeUnlocked = true;
           lifePinInput = '';
@@ -1169,12 +1196,14 @@
           renderLifeManagement();
         }, 650);
       } else {
-        lifePinStatus = 'error';
-        renderLifeLock();
+        updateLifePinDots('error');
         setTimeout(() => {
           lifePinInput = '';
           lifePinStatus = 'idle';
-          renderLifeLock();
+          const input = document.getElementById('lifePinHiddenInput');
+          if (input) input.value = '';
+          updateLifePinDots('idle');
+          focusLifePinInput();
         }, 1200);
       }
     }
