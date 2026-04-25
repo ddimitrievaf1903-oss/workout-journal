@@ -848,6 +848,58 @@
       .lifeItemGrid { grid-template-columns: 1fr 1fr; }
     }
 
+
+    .planBlock.planButton {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .planBlock.planButton:active {
+      transform: scale(0.996);
+    }
+
+    .planBlockContentRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .planChevron {
+      font-size: 18px;
+      opacity: .55;
+      transition: transform .16s ease;
+    }
+
+    .planChevron.open {
+      transform: rotate(90deg);
+    }
+
+    .lifeGroupBody {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: noteFade .16s ease;
+    }
+
+    .lifeItemName {
+      font-size: 12px !important;
+      line-height: 1.2;
+      padding: 7px 8px;
+      min-height: 34px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lifeItemTop {
+      align-items: stretch;
+    }
+
+    .lifeItemTop button {
+      white-space: nowrap;
+      min-width: 72px;
+    }
+
   </style>
 </head>
 <body>
@@ -1211,31 +1263,129 @@
     function ensureLifePlanDefaults() {
       if (!lifeData || typeof lifeData !== 'object') lifeData = {};
       if (!lifeData.plan || typeof lifeData.plan !== 'object') {
-        lifeData.plan = { names: {}, done: {} };
+        lifeData.plan = { names: {}, done: {}, expanded: {} };
       }
       if (!lifeData.plan.names) lifeData.plan.names = {};
       if (!lifeData.plan.done) lifeData.plan.done = {};
+      if (!lifeData.plan.expanded) {
+        lifeData.plan.expanded = {
+          body: true,
+          job: false,
+          conscience: false
+        };
+      }
+      if (typeof lifeData.plan.expanded.body !== 'boolean') lifeData.plan.expanded.body = true;
+      if (typeof lifeData.plan.expanded.job !== 'boolean') lifeData.plan.expanded.job = false;
+      if (typeof lifeData.plan.expanded.conscience !== 'boolean') lifeData.plan.expanded.conscience = false;
     }
 
     function lifeItems() {
       return {
-        clothing: [
-          { id: 'clothes_1', def: 'Одежда 1', total: 1.33 },
-          { id: 'clothes_2', def: 'Одежда 2', total: 1.33 },
-          { id: 'clothes_3', def: 'Одежда 3', total: 1.34 }
-        ],
-        weight: Array.from({ length: 8 }, (_, i) => ({
-          id: 'weight_' + (i + 1),
-          def: 'Вес ' + (i + 1),
-          total: 0.5
-        })),
-        smoking: [
-          { id: 'smoking_1', def: 'Курение 1', total: 1 },
-          { id: 'smoking_2', def: 'Курение 2', total: 2 },
-          { id: 'smoking_3', def: 'Курение 3', total: 2 },
-          { id: 'smoking_4', def: 'Курение 4', total: 2 }
-        ]
+        body: {
+          title: 'Body plans',
+          total: 15,
+          groups: [
+            {
+              id: 'clothing',
+              title: 'Одежда',
+              items: [
+                { id: 'clothes_1', def: 'Одежда 1', total: 1.33 },
+                { id: 'clothes_2', def: 'Одежда 2', total: 1.33 },
+                { id: 'clothes_3', def: 'Одежда 3', total: 1.34 }
+              ]
+            },
+            {
+              id: 'weight',
+              title: 'Вес',
+              items: Array.from({ length: 8 }, (_, i) => ({
+                id: 'weight_' + (i + 1),
+                def: 'Вес ' + (i + 1),
+                total: 0.5
+              }))
+            },
+            {
+              id: 'smoking',
+              title: 'Курение',
+              items: [
+                { id: 'smoking_1', def: 'Курение 1', total: 1 },
+                { id: 'smoking_2', def: 'Курение 2', total: 2 },
+                { id: 'smoking_3', def: 'Курение 3', total: 2 },
+                { id: 'smoking_4', def: 'Курение 4', total: 2 }
+              ]
+            }
+          ]
+        },
+        job: {
+          title: 'Job plans',
+          total: 30,
+          groups: [
+            {
+              id: 'job_leftovers',
+              title: 'Остатки',
+              items: Array.from({ length: 7 }, (_, i) => ({
+                id: 'job_leftovers_' + (i + 1),
+                def: 'Остаток ' + (i + 1),
+                total: 2.14
+              }))
+            },
+            {
+              id: 'job_profit',
+              title: 'Прибыль',
+              items: [2.14, 2.14, 2.14, 2.14, 2.14, 2.14, 2.18].map((value, i) => ({
+                id: 'job_profit_' + (i + 1),
+                def: 'Прибыль ' + (i + 1),
+                total: value
+              }))
+            }
+          ]
+        },
+        conscience: {
+          title: "Conscience's plans",
+          total: 55,
+          groups: [
+            {
+              id: 'microloans',
+              title: 'Микрозаймы',
+              items: [1, 4, 1, 3, 1, 1, 1, 1].map((value, i) => ({
+                id: 'microloan_' + (i + 1),
+                def: 'Микрозайм ' + (i + 1),
+                total: value
+              }))
+            },
+            {
+              id: 'credits',
+              title: 'Кредиты',
+              items: [7, 1, 6, 5, 1, 4, 4].map((value, i) => ({
+                id: 'credit_' + (i + 1),
+                def: 'Кредит ' + (i + 1),
+                total: value
+              }))
+            },
+            {
+              id: 'personal_debts',
+              title: 'Личные долги',
+              items: [7, 6].map((value, i) => ({
+                id: 'personal_debt_' + (i + 1),
+                def: 'Личный долг ' + (i + 1),
+                total: value
+              }))
+            },
+            {
+              id: 'conscience_single',
+              title: 'Совесть',
+              items: [
+                { id: 'conscience_1', def: 'Совесть', total: 1 }
+              ]
+            }
+          ]
+        }
       };
+    }
+
+    function flattenLifeItems(section = null) {
+      const sections = lifeItems();
+      const keys = section ? [section] : Object.keys(sections);
+      return keys.flatMap(key => sections[key].groups.flatMap(group => group.items));
     }
 
     function lifeItemName(id, fallback) {
@@ -1252,12 +1402,18 @@
       ensureLifePlanDefaults();
       lifeData.plan.names[id] = String(value || '').trim();
       save();
-      renderLifeManagement();
     }
 
     function toggleLifeItem(id) {
       ensureLifePlanDefaults();
       lifeData.plan.done[id] = !lifeData.plan.done[id];
+      save();
+      renderLifeManagement();
+    }
+
+    function toggleLifeGroup(sectionKey) {
+      ensureLifePlanDefaults();
+      lifeData.plan.expanded[sectionKey] = !lifeData.plan.expanded[sectionKey];
       save();
       renderLifeManagement();
     }
@@ -1281,42 +1437,77 @@
       }) + '%';
     }
 
-    function planBlock(title, fillPct, subtitle = '', large = false) {
+    function planBlock(title, fillPct, subtitle = '', large = false, onclick = '', open = false) {
+      const clickableClass = onclick ? 'planButton' : '';
+      const clickAttr = onclick ? `onclick="${onclick}"` : '';
       return `
-        <div class="planBlock ${large ? 'bigPlan' : ''}" style="--fill:${fillPct}%">
+        <div class="planBlock ${large ? 'bigPlan' : ''} ${clickableClass}" style="--fill:${fillPct}%" ${clickAttr}>
           <div class="planBlockFill"></div>
           <div class="planBlockContent">
-            <div class="${large ? 'planTitleLarge' : 'planTitle'}">${title}</div>
-            ${subtitle ? `<div class="planPercent">${subtitle}</div>` : ''}
+            ${onclick ? `
+              <div class="planBlockContentRow">
+                <div>
+                  <div class="${large ? 'planTitleLarge' : 'planTitle'}">${title}</div>
+                  ${subtitle ? `<div class="planPercent">${subtitle}</div>` : ''}
+                </div>
+                <div class="planChevron ${open ? 'open' : ''}">›</div>
+              </div>
+            ` : `
+              <div class="${large ? 'planTitleLarge' : 'planTitle'}">${title}</div>
+              ${subtitle ? `<div class="planPercent">${subtitle}</div>` : ''}
+            `}
           </div>
         </div>
       `;
     }
 
-    function lifeItemCell(item) {
+    function lifeItemCell(item, parentTotal, parentLabel) {
       const done = isLifeItemDone(item.id);
-      const bodyPct = (item.total / 15) * 100;
+      const parentPct = (item.total / parentTotal) * 100;
       return `
         <div class="lifeItemCell ${done ? 'done' : ''}" style="--fill:${done ? 100 : 0}%">
           <div class="planBlockFill"></div>
           <div class="lifeItemTop">
-            <input class="lifeItemName" value="${escapeHtml(lifeItemName(item.id, item.def))}" onchange="setLifeItemName('${item.id}', this.value)">
+            <input
+              class="lifeItemName"
+              value="${escapeHtml(lifeItemName(item.id, item.def))}"
+              onchange="setLifeItemName('${item.id}', this.value)"
+              onblur="setLifeItemName('${item.id}', this.value)"
+            >
             <button class="${done ? 'green' : 'secondary'} small" onclick="toggleLifeItem('${item.id}')">${done ? '✓' : 'Выполнено'}</button>
           </div>
           <div class="lifeItemMeta">
-            К плану: ${fmtPct(item.total)} · к Body: ${fmtPct(bodyPct)}
+            К плану: ${fmtPct(item.total)} · к ${parentLabel}: ${fmtPct(parentPct)}
           </div>
         </div>
       `;
     }
 
-    function renderLifeGroup(title, items, groupTotal) {
-      const done = sumLife(items, true);
+    function renderLifeSubGroup(group, sectionTotal, sectionTitle) {
+      const total = sumLife(group.items);
+      const done = sumLife(group.items, true);
       return `
-        ${planBlock(title, pct(done, groupTotal), `${fmtPct(done)} из ${fmtPct(groupTotal)} к плану · ${fmtPct(pct(done, groupTotal))} выполнено`)}
+        <div class="planSubTitle">${group.title}</div>
+        ${planBlock(group.title, pct(done, total), `${fmtPct(done)} из ${fmtPct(total)} к плану · ${fmtPct(pct(done, total))} выполнено`)}
         <div class="lifeItemGrid">
-          ${items.map(lifeItemCell).join('')}
+          ${group.items.map(item => lifeItemCell(item, sectionTotal, sectionTitle)).join('')}
         </div>
+      `;
+    }
+
+    function renderLifeSection(sectionKey, section) {
+      ensureLifePlanDefaults();
+      const expanded = !!lifeData.plan.expanded[sectionKey];
+      const sectionItems = flattenLifeItems(sectionKey);
+      const done = sumLife(sectionItems, true);
+      const fill = pct(done, section.total);
+      return `
+        ${planBlock(section.title, fill, `${fmtPct(done)} из ${fmtPct(section.total)} · ${fmtPct(fill)} выполнено`, false, `toggleLifeGroup('${sectionKey}')`, expanded)}
+        ${expanded ? `
+          <div class="lifeGroupBody">
+            ${section.groups.map(group => renderLifeSubGroup(group, section.total, section.title)).join('')}
+          </div>
+        ` : ''}
       `;
     }
 
@@ -1325,33 +1516,28 @@
       renderBottomNav();
       ensureLifePlanDefaults();
 
-      const groups = lifeItems();
-      const clothingTotal = sumLife(groups.clothing);
-      const weightTotal = sumLife(groups.weight);
-      const smokingTotal = sumLife(groups.smoking);
-      const bodyDone = sumLife(groups.clothing, true) + sumLife(groups.weight, true) + sumLife(groups.smoking, true);
-      const bodyFill = pct(bodyDone, 15);
-      const jobFill = 0;
-      const conscienceFill = 0;
-      const overallDone = bodyDone;
-
+      const sections = lifeItems();
+      const allItems = flattenLifeItems();
+      const overallDone = sumLife(allItems, true);
+      const overallFill = pct(overallDone, 100);
       const app = document.getElementById('app');
 
       app.innerHTML = `
         ${renderTopHeader('Life Management')}
         <div class="lifePlanWrap">
-          ${planBlock('Выполнение плана', overallDone, `${fmtPct(overallDone)} из 100%`, true)}
+          ${planBlock('Выполнение плана', overallFill, `${fmtPct(overallDone)} из 100%`, true)}
 
           <div class="planSectionGrid">
-            ${planBlock('Body plans', bodyFill, `${fmtPct(bodyDone)} из 15%`)}
-            ${planBlock('Job plans', jobFill, `0% из 30%`)}
-            ${planBlock("Conscience's plans", conscienceFill, `0% из 55%`)}
+            ${Object.entries(sections).map(([key, section]) => {
+              const done = sumLife(flattenLifeItems(key), true);
+              return planBlock(section.title, pct(done, section.total), `${fmtPct(done)} из ${fmtPct(section.total)}`, false, `toggleLifeGroup('${key}')`, !!lifeData.plan.expanded[key]);
+            }).join('')}
           </div>
 
-          <div class="planSubTitle">Body plans</div>
-          ${renderLifeGroup('Одежда', groups.clothing, clothingTotal)}
-          ${renderLifeGroup('Вес', groups.weight, weightTotal)}
-          ${renderLifeGroup('Курение', groups.smoking, smokingTotal)}
+          ${Object.entries(sections).map(([key, section]) => `
+            <div class="planSubTitle">${section.title}</div>
+            ${renderLifeSection(key, section)}
+          `).join('')}
 
           <div class="row" style="justify-content:center">
             <button class="secondary" onclick="lockLifeManagement()">Заблокировать</button>
