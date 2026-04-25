@@ -612,8 +612,63 @@
       max-width: 460px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 6px;
+    }
+
+    .lifeLockScreen {
+      min-height: 65dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 18px;
+    }
+
+    .lifeLockIcon {
+      font-size: 44px;
+      line-height: 1;
+    }
+
+    .pinDots {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin: 4px 0;
+    }
+
+    .pinDot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #d1d1d6;
+      transition: background .14s ease, transform .14s ease;
+    }
+
+    .pinDot.filled {
+      background: #111;
+      transform: scale(1.05);
+    }
+
+    .pinHiddenInput {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+
+    .lifeCard {
+      background: #fff;
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .unknownWorkoutDot {
+      background:#8e8e93;
     }
 
     .bottomNav button {
@@ -691,6 +746,10 @@
     let notesSearch = '';
     let noteAutosaveTimer = null;
     let currentlySwipedId = null;
+    let lifeUnlocked = false;
+    let lifePinInput = '';
+    const LIFE_PIN = '1903';
+    let lifeData = JSON.parse(localStorage.getItem('lifeData')) || {};
 
     const workoutColors = [
       '#007aff',
@@ -709,6 +768,7 @@
       localStorage.setItem('notesData', JSON.stringify(notesData));
       localStorage.setItem('notesFolders', JSON.stringify(notesFolders));
       localStorage.setItem('notesPrefs', JSON.stringify(notesPrefs));
+      localStorage.setItem('lifeData', JSON.stringify(lifeData));
     }
 
     function saveCloud() {
@@ -720,6 +780,7 @@
         notesData: Array.isArray(notesData) ? notesData : [],
         notesFolders: Array.isArray(notesFolders) ? notesFolders : [],
         notesPrefs: (notesPrefs && typeof notesPrefs === 'object') ? notesPrefs : {},
+        lifeData: (lifeData && typeof lifeData === 'object') ? lifeData : {},
         updatedAt: Date.now()
       };
 
@@ -825,6 +886,9 @@
         <button class="${currentTab === 'calendar' ? 'activeTab' : ''}" onclick="showCalendar()">
           <span>📅</span><span>Календарь</span>
         </button>
+        <button class="${currentTab === 'life' ? 'activeTab' : ''}" onclick="showLifeManagement()">
+          <span>🔒</span><span>Life</span>
+        </button>
       `;
     }
 
@@ -845,6 +909,7 @@
       if (cloud.notesPrefs && typeof cloud.notesPrefs === 'object') {
         notesPrefs = { ...notesPrefs, ...cloud.notesPrefs };
       }
+      if (cloud.lifeData && typeof cloud.lifeData === 'object') lifeData = cloud.lifeData;
 
       ensureWorkoutIds();
       migrateNotesSystem();
@@ -889,6 +954,101 @@
     function showCalendar() {
       currentTab = 'calendar';
       renderCalendar();
+    }
+
+    function showLifeManagement() {
+      currentTab = 'life';
+      renderBottomNav();
+
+      if (lifeUnlocked) {
+        renderLifeManagement();
+      } else {
+        renderLifeLock();
+      }
+    }
+
+    function renderLifeLock() {
+      const app = document.getElementById('app');
+
+      app.innerHTML = `
+        ${renderTopHeader('Life Management')}
+        <div class="lifeLockScreen" onclick="focusLifePinInput()">
+          <div class="lifeLockIcon">🔒</div>
+          <div>
+            <div style="font-size:20px;font-weight:700;margin-bottom:6px">Введите пароль</div>
+            <div class="helper">4 цифры</div>
+          </div>
+
+          <div class="pinDots">
+            ${[0,1,2,3].map(i => `
+              <div class="pinDot ${lifePinInput.length > i ? 'filled' : ''}"></div>
+            `).join('')}
+          </div>
+
+          <input
+            id="lifePinHiddenInput"
+            class="pinHiddenInput"
+            type="tel"
+            inputmode="numeric"
+            maxlength="4"
+            autocomplete="one-time-code"
+            value="${escapeHtml(lifePinInput)}"
+            oninput="handleLifePinInput(this.value)"
+          />
+        </div>
+      `;
+
+      requestAnimationFrame(focusLifePinInput);
+    }
+
+    function focusLifePinInput() {
+      const input = document.getElementById('lifePinHiddenInput');
+      if (input) input.focus();
+    }
+
+    function handleLifePinInput(value) {
+      lifePinInput = String(value || '').replace(/\D/g, '').slice(0, 4);
+
+      if (lifePinInput.length < 4) {
+        renderLifeLock();
+        return;
+      }
+
+      if (lifePinInput === LIFE_PIN) {
+        lifeUnlocked = true;
+        lifePinInput = '';
+        renderLifeManagement();
+      } else {
+        lifePinInput = '';
+        renderLifeLock();
+      }
+    }
+
+    function renderLifeManagement() {
+      currentTab = 'life';
+      renderBottomNav();
+
+      const app = document.getElementById('app');
+
+      app.innerHTML = `
+        ${renderTopHeader('Life Management')}
+        <div class="lifeCard">
+          <div style="font-size:34px;margin-bottom:8px">🧭</div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:6px">Личный раздел</div>
+          <div class="helper">
+            Раздел открыт. Сюда дальше можно добавить цели, финансы, задачи, привычки, документы и личные планы.
+          </div>
+          <div class="row" style="justify-content:center">
+            <button class="secondary" onclick="lockLifeManagement()">Заблокировать</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function lockLifeManagement() {
+      lifeUnlocked = false;
+      lifePinInput = '';
+      renderLifeLock();
     }
 
     function renderColorPicker(selected, index = null) {
@@ -1814,6 +1974,10 @@
 
     function buildDayDots(entries) {
       return entries.map(entry => {
+        if (entry.type === 'unknown') {
+          return `<div class="dayDot unknownWorkoutDot" style="background:#8e8e93"></div>`;
+        }
+
         const workout = data.find(w => w.id === entry.workoutId);
         if (!workout) return '';
         return `<div class="dayDot" style="background:${workout.color || '#8e8e93'}"></div>`;
@@ -1905,6 +2069,21 @@
 
       const existingHtml = entries.length
         ? entries.map((entry, idx) => {
+            if (entry.type === 'unknown') {
+              return swipeWrap(
+                `cal_${key}_${idx}`,
+                `
+                  <div class="modalListItem">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <div class="workoutColorDot" style="background:#8e8e93"></div>
+                      <span>Тренировка</span>
+                    </div>
+                  </div>
+                `,
+                `removeWorkoutFromDay('${key}', ${idx})`
+              );
+            }
+
             const workout = data.find(w => w.id === entry.workoutId);
             if (!workout) return '';
             return swipeWrap(
@@ -1939,6 +2118,13 @@
         <div class="helper">Добавленные тренировки</div>
         ${existingHtml}
         <div class="helper" style="margin-top:12px">Выбрать тренировку</div>
+        <div class="modalListItem">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="workoutColorDot" style="background:#8e8e93"></div>
+            <span>Просто тренировка</span>
+          </div>
+          <button onclick="addUnknownWorkoutToDay('${key}')">Добавить</button>
+        </div>
         ${options}
       `);
       attachSwipeables();
@@ -1957,6 +2143,19 @@
       if (!calendarData[key]) calendarData[key] = [];
       calendarData[key].push({
         workoutId: workout.id,
+        addedAt: Date.now()
+      });
+
+      save();
+      renderDayModal(key);
+      renderCalendar();
+    }
+
+    function addUnknownWorkoutToDay(key) {
+      if (!calendarData[key]) calendarData[key] = [];
+
+      calendarData[key].push({
+        type: 'unknown',
         addedAt: Date.now()
       });
 
@@ -2066,7 +2265,8 @@
         calendarData: calendarData,
         notesData: notesData,
         notesFolders: notesFolders,
-        notesPrefs: notesPrefs
+        notesPrefs: notesPrefs,
+        lifeData: lifeData
       };
       const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -2104,6 +2304,7 @@
               notesData = parsed.notesData || [];
               notesFolders = parsed.notesFolders || [];
               notesPrefs = parsed.notesPrefs || notesPrefs;
+              lifeData = parsed.lifeData || {};
             }
 
             ensureWorkoutIds();
